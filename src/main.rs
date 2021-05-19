@@ -22,6 +22,8 @@ use url::Url;
 mod api;
 mod response;
 mod routes;
+#[cfg(test)]
+mod tests;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
@@ -52,7 +54,7 @@ pub fn app(to_matrix: Sender<String>) -> rocket::Rocket<rocket::Build> {
     let store = Store { config, to_matrix };
     rocket::custom(raw_config)
         .manage(store)
-        .mount("/", routes![routes::test, routes::receive])
+        .mount("/", routes![routes::index])
         .register("/", catchers![not_found])
 }
 

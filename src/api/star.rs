@@ -1,0 +1,29 @@
+use serde::Deserialize;
+
+use crate::api::common::{Dt, Org, Repo, User};
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StarAction {
+    Created,
+    Deleted,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct StarEvent {
+    /// One of `created` or `deleted`.
+    pub action: StarAction,
+
+    /// The time in UTC when this repo was stared.
+    pub starred_at: Dt,
+
+    /// Detailed information about the repository that was stared.
+    pub repository: Repo,
+
+    /// Detailed information about the organization the repo that was stared
+    /// belongs to.
+    pub organization: Option<Org>,
+
+    /// Detailed information about the user who stared the repo.
+    pub sender: User,
+}

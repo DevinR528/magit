@@ -7,14 +7,14 @@ use tokio::io::AsyncReadExt;
 
 use crate::api::GitHubEvent;
 
-const X_GITHUB_EVENT: &str = "x-github-event";
-const X_HUB_SIGNATURE: &str = "x-hub-signature-256";
-const CONTENT_LEN: &str = "content-length";
+pub const X_GITHUB_EVENT: &str = "x-github-event";
+pub const X_HUB_SIGNATURE: &str = "x-hub-signature-256";
+pub const CONTENT_LEN: &str = "content-length";
 
-const PULL_REQUEST_EVENT: &str = "pull_request";
-const ISSUE_COMMENT_EVENT: &str = "issue_comment";
-const STATUS_EVENT: &str = "status";
-const STARS_EVENT: &str = "star";
+pub const PULL_REQUEST_EVENT: &str = "pull_request";
+pub const ISSUE_COMMENT_EVENT: &str = "issue_comment";
+pub const STATUS_EVENT: &str = "status";
+pub const STARS_EVENT: &str = "star";
 
 #[rocket::async_trait]
 impl<'r> FromData<'r> for GitHubEvent {
@@ -80,9 +80,19 @@ impl<'r> FromData<'r> for GitHubEvent {
         }
 
         Outcome::Success(match keys[0] {
-            PULL_REQUEST_EVENT => GitHubEvent::PullRequest(),
+            PULL_REQUEST_EVENT => GitHubEvent::PullRequest(
+                match serde_json::from_str(&body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
             ISSUE_COMMENT_EVENT => GitHubEvent::IssueComment(),
-            STATUS_EVENT => GitHubEvent::Status(),
+            STATUS_EVENT => GitHubEvent::Status(
+                match serde_json::from_str(&body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
             STARS_EVENT => GitHubEvent::Star(
                 match serde_json::from_str(&body).map_err(|e| e.to_string()) {
                     Ok(ev) => ev,
@@ -111,7 +121,7 @@ fn validate<B: AsRef<[u8]>>(secret: B, signature: B, message: B) -> bool {
     s.eq(signature.as_ref())
 }
 
-fn bytes_to_hex(bytes: &[u8]) -> Vec<u8> {
+pub fn bytes_to_hex(bytes: &[u8]) -> Vec<u8> {
     const CHARS: &[u8] = b"0123456789abcdef";
     let mut v = Vec::with_capacity(bytes.len() * 2);
     for &byte in bytes {
