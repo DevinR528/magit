@@ -1081,6 +1081,7 @@ dependencies = [
  "ruma",
  "serde",
  "serde_json",
+ "serde_path_to_error",
  "sha-1",
  "sha2",
  "tokio",

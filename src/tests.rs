@@ -2,7 +2,7 @@ use rocket::{
     http::{ContentType, Header, Status},
     local::asynchronous::Client,
 };
-use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::mpsc::channel;
 
 use crate::{
     app,
@@ -28,7 +28,7 @@ fn make_signature(body: &str) -> String {
 
 #[tokio::test]
 async fn stars() {
-    let (to_matrix, from_gh) = channel(1024);
+    let (to_matrix, _from_gh) = channel(1024);
     let json = include_str!("../test_json/star.json");
 
     let client = Client::tracked(app(to_matrix)).await.expect("valid rocket instance");

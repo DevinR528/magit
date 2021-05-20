@@ -7,6 +7,7 @@ use tokio::io::AsyncReadExt;
 
 use crate::api::GitHubEvent;
 
+// TODO: accept: 'application/vnd.github.v3+json'
 pub const X_GITHUB_EVENT: &str = "x-github-event";
 pub const X_HUB_SIGNATURE: &str = "x-hub-signature-256";
 pub const CONTENT_LEN: &str = "content-length";
@@ -86,7 +87,14 @@ impl<'r> FromData<'r> for GitHubEvent {
                     Err(err) => return Outcome::Failure((Status::BadRequest, err)),
                 },
             ),
-            ISSUE_COMMENT_EVENT => GitHubEvent::IssueComment(),
+            ISSUE_COMMENT_EVENT => {
+                GitHubEvent::IssueComment(
+                    match serde_json::from_str(&body).map_err(|e| e.to_string()) {
+                        Ok(ev) => ev,
+                        Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                    },
+                )
+            }
             STATUS_EVENT => GitHubEvent::Status(
                 match serde_json::from_str(&body).map_err(|e| e.to_string()) {
                     Ok(ev) => ev,
