@@ -4,7 +4,7 @@ use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::common::{
-    Dt, IssueState, Label, Org, Repo, RepoPermission, UrlMap, User,
+    Base, Dt, Head, IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
 };
 
 #[derive(Clone, Debug, Deserialize)]
@@ -103,7 +103,7 @@ pub struct PullRequest {
     /// String identifier of the repository.
     pub node_id: String,
 
-    /// The public html web page url.
+    /// The public web page url.
     pub html_url: Url,
 
     /// The url of the diff.
@@ -128,8 +128,7 @@ pub struct PullRequest {
     /// Information about the user.
     pub user: User,
 
-    // TODO: confirm
-    /// The body of the commit message.
+    /// The body of the pull request message.
     pub body: String,
 
     /// Time in UTC this pull request was created.
@@ -143,6 +142,9 @@ pub struct PullRequest {
 
     /// Time in UTC this pull request was last updated.
     pub merged_at: Option<Dt>,
+
+    /// The user who merged this pull request.
+    pub merged_by: Option<String>,
 
     /// The SHA of the merge commit, if any.
     pub merge_commit_sha: Option<String>,
@@ -218,142 +220,20 @@ pub struct PullRequest {
     /// Information about the head of this commit.
     pub head: Head,
 
-    /// Information about the base commit.
+    /// Information about the base branch.
     pub base: Base,
 
     /// Information about the repository this pull request is against.
     pub repository: Option<Repo>,
-}
 
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Head {
-    pub label: Option<String>,
-    #[serde(rename = "ref")]
-    pub ref_field: String,
-    pub sha: String,
-    pub user: Option<User>,
-    pub repo: Option<Repo>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Base {
-    pub label: String,
-    #[serde(rename = "ref")]
-    pub ref_field: String,
-    pub sha: String,
-    pub user: User,
-    pub repo: Option<Repo>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Milestone {
-    /// Numeric Id of this milestone.
-    pub id: UInt,
-
-    /// String identifier of the milestone.
-    pub node_id: String,
-
-    /// The name of this milestone.
-    pub name: String,
-
-    /// Information about the creator of this milestone.
-    pub creator: User,
-
-    /// The public html web page url.
-    pub html_url: Url,
-
-    /// The url to the github api of this repo.
-    pub url: String,
-
-    /// The url to the github api labels requests.
-    pub labels_url: String,
-
-    /// Description of the repo.
-    pub description: Option<String>,
-
-    /// The number this milestone is.
-    pub number: UInt,
-
-    /// The state of this milestone.
-    pub state: Option<IssueState>,
-
-    /// The title of this milestone.
-    pub title: String,
-
-    /// The number of open issues related to this milestone.
-    #[serde(default)]
-    pub open_issues: UInt,
-
-    /// The number of closed issues related to this milestone.
-    #[serde(default)]
-    pub closed_issues: UInt,
-
-    /// The time in UTC when the milestone was created.
-    pub created_at: Dt,
-
-    /// The time in UTC when the milestone was last updated.
-    pub updated_at: Option<Dt>,
-
-    /// The time in UTC when the milestone was closed.
-    pub closed_at: Option<Dt>,
-
-    /// The time in UTC when the milestone is due.
-    pub due_on: Option<Dt>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Team {
-    /// Numeric Id of this team.
-    pub id: UInt,
-
-    /// String identifier of the team.
-    pub node_id: String,
-
-    /// The name of this team.
-    pub name: String,
-
-    /// The slug of this team.
-    pub slug: String,
-
-    /// The public web page url.
-    pub html_url: Url,
-
-    /// The url to the github api of this repo.
-    pub url: String,
-
-    /// Description of the repo.
-    pub description: Option<String>,
-
-    /// The privacy this team is.
-    pub privacy: String,
-
-    /// Permissions required for this team.
-    pub permissions: RepoPermission,
-
-    /// The title of this team.
-    pub title: String,
-
-    /// The number of members on this team.
-    #[serde(default)]
-    pub members_count: UInt,
-
-    /// The time in UTC when the team was created.
-    pub created_at: Option<Dt>,
-
-    /// The time in UTC when the team was last updated.
-    pub updated_at: Option<Dt>,
-
-    /// The time in UTC when the team was closed.
-    pub organization: Option<Org>,
-
-    /// The time in UTC when the team is due.
-    pub parent: Option<Box<Team>>,
+    /// All links related to this pull request.
+    #[serde(rename = "_links")]
+    pub links: Links,
 
     /// A map of all the github api urls.
+    ///
+    /// [`PullRequest`] has only a few REST api urls, they relate to commits, reviews,
+    /// and issues.
     #[serde(flatten, default)]
     pub all_urls: UrlMap,
 }
