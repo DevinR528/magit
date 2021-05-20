@@ -18,13 +18,13 @@ pub const STATUS_EVENT: &str = "status";
 pub const STARS_EVENT: &str = "star";
 
 #[rocket::async_trait]
-impl<'r> FromData<'r> for GitHubEvent {
+impl<'r> FromData<'r> for GitHubEvent<'r> {
     type Error = String;
 
     async fn from_data(
         request: &'r Request<'_>,
         data: Data,
-    ) -> data::Outcome<GitHubEvent, Self::Error> {
+    ) -> data::Outcome<GitHubEvent<'r>, Self::Error> {
         let keys = request.headers().get(X_HUB_SIGNATURE).collect::<Vec<_>>();
         let content_len = request.headers().get(CONTENT_LEN).collect::<Vec<_>>();
         if content_len.len() != 1 {
@@ -87,14 +87,12 @@ impl<'r> FromData<'r> for GitHubEvent {
                     Err(err) => return Outcome::Failure((Status::BadRequest, err)),
                 },
             ),
-            ISSUE_COMMENT_EVENT => {
-                GitHubEvent::IssueComment(
-                    match serde_json::from_str(&body).map_err(|e| e.to_string()) {
-                        Ok(ev) => ev,
-                        Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                    },
-                )
-            }
+            ISSUE_COMMENT_EVENT => GitHubEvent::Issue(
+                match serde_json::from_str(&body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
             STATUS_EVENT => GitHubEvent::Status(
                 match serde_json::from_str(&body).map_err(|e| e.to_string()) {
                     Ok(ev) => ev,

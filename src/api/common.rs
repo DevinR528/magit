@@ -11,8 +11,8 @@ pub use enums::{
     Type,
 };
 pub use structs::{
-    Base, Branch, Commit, CommitInner, CommitTree, Head, Label, Links, Milestone, Org,
-    Permissions, Plan, Repo, ShortUser, Team, User, Verification,
+    AccessPermissions, App, Base, Branch, Commit, CommitInner, CommitTree, Head, Label,
+    Links, Milestone, Org, Permissions, Plan, Repo, ShortUser, Team, User, Verification,
 };
 
 pub type Dt = DateTime<Utc>;

@@ -1,3 +1,4 @@
+mod checks;
 mod common;
 mod installation;
 mod issue;
@@ -5,6 +6,7 @@ mod pull;
 mod star;
 mod status;
 
+use checks::CheckEvent;
 use installation::InstallationEvent;
 use issue::IssueEvent;
 use pull::PullRequest;
@@ -16,21 +18,24 @@ use status::StatusEvent;
 /// `GithubEvent` does not implement `Deserialize` because there is no information in the
 /// payload to find which variant, that information is in the request header.
 #[derive(Clone, Debug)]
-pub enum GitHubEvent {
-    /// The pull request payload of a github webhook.
-    PullRequest(PullRequest),
+pub enum GitHubEvent<'a> {
+    /// The check suite payload of a github webhook.
+    CheckSuite(CheckEvent<'a>),
 
     /// The installation payload of a github webhook.
     InstallationRequest(InstallationEvent),
 
     /// The issue payload of a github webhook.
-    IssueComment(IssueEvent),
+    Issue(IssueEvent),
 
-    /// The status payload of a github webhook.
-    Status(StatusEvent),
+    /// The pull request payload of a github webhook.
+    PullRequest(PullRequest),
 
     /// The stared payload of a github webhook.
     Star(StarEvent),
+
+    /// The status payload of a github webhook.
+    Status(StatusEvent),
 }
 
 #[cfg(test)]
@@ -38,7 +43,8 @@ mod test {
     use matrix_sdk::uint;
 
     use crate::api::{
-        common::{Commit, CommitInner, IssueState, Repo, Type, User},
+        checks::{CheckAction, CheckEvent, CheckSuite},
+        common::{App, Commit, CommitInner, IssueState, Repo, Type, User},
         installation::{Installation, InstallationAction, InstallationEvent},
         issue::{Issue, IssueAction, IssueEvent},
         pull::{PullAction, PullEvent, PullRequest},
@@ -165,6 +171,32 @@ mod test {
                 && !sender_urls.is_empty()
                 && !events.is_empty()
                 && repositories.len() == 1
+
+        ))
+    }
+
+    #[test]
+    fn check() {
+        let json = include_str!("../test_json/check.json");
+        // Some Deserializer.
+        let jd = &mut serde_json::Deserializer::from_str(json);
+        let installation = serde_path_to_error::deserialize::<_, CheckEvent>(jd).unwrap();
+        assert!(matches!(
+            installation,
+            CheckEvent {
+                action: CheckAction::Completed,
+                check_suite: CheckSuite { id, head_branch, pull_requests, app: App { events, .. }, .. },
+                repository: Repo { all_urls, .. },
+                sender: User { kind: Type::User, all_urls: sender_urls, .. },
+                organization: None,
+                installation: None,
+                ..
+            } if head_branch == "changes"
+                && id == uint!(118578147)
+                && !sender_urls.is_empty()
+                && !all_urls.is_empty()
+                && !pull_requests.is_empty()
+                && events.is_empty()
 
         ))
     }

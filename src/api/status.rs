@@ -4,6 +4,7 @@ use url::Url;
 
 use crate::api::common::{Branch, Commit, Org, Repo, User};
 
+/// The state of the status event.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StatusState {
@@ -13,6 +14,7 @@ pub enum StatusState {
     Error,
 }
 
+/// The payload of a status event.
 #[derive(Clone, Debug, Deserialize)]
 pub struct StatusEvent {
     /// The unique identifier of the status.
