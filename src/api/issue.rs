@@ -5,6 +5,7 @@ use url::Url;
 
 use crate::api::common::{Dt, IssueState, Label, LockReason, Milestone, Org, Repo, User};
 
+/// The actions that can be taken for an issue event.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum IssueAction {
@@ -57,6 +58,7 @@ pub enum IssueAction {
     Demilestoned,
 }
 
+/// The payload of an issue event.
 #[derive(Clone, Debug, Deserialize)]
 pub struct IssueEvent {
     /// The action that was performed.

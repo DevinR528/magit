@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 use crate::api::common::{Dt, Org, Repo, User};
 
+/// The specific actions that a star event has.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StarAction {
@@ -9,6 +10,7 @@ pub enum StarAction {
     Deleted,
 }
 
+/// The payload of a star event.
 #[derive(Clone, Debug, Deserialize)]
 pub struct StarEvent {
     /// One of `created` or `deleted`.

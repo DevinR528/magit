@@ -5,9 +5,49 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::common::{
-    enums::{IssueState, RepoCreationType, RepoPermission, Type},
+    enums::{EventKind, IssueState, RepoCreationType, RepoPermission, Type},
     Dt, UrlMap,
 };
+
+/// Information about the installed app.
+#[derive(Clone, Debug, Deserialize)]
+pub struct App {
+    /// Numeric Id of this team.
+    pub id: UInt,
+
+    /// String identifier of the team.
+    pub node_id: String,
+
+    /// The name of this team.
+    pub name: String,
+
+    /// The slug of this team.
+    pub slug: Option<String>,
+
+    /// The owner of this app.
+    pub owner: User,
+
+    /// The public web page url.
+    pub html_url: Url,
+
+    /// The external url related to this app.
+    pub external_url: Url,
+
+    /// Description of the repo.
+    pub description: Option<String>,
+
+    /// Permissions required for this team.
+    pub permissions: AccessPermissions,
+
+    /// The time in UTC when the team was created.
+    pub created_at: Dt,
+
+    /// The time in UTC when the team was last updated.
+    pub updated_at: Dt,
+
+    /// Events that this app has access to.
+    pub events: Vec<EventKind>,
+}
 
 #[derive(Clone, Debug, Deserialize)]
 #[non_exhaustive]
@@ -452,18 +492,18 @@ pub struct CommitTree {
 
 /// Information about a repository.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Repo {
+pub struct Repo<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this repository.
-    pub name: String,
+    pub name: &'a str,
 
     /// The name including owner ie. `owner/repo-name`.
-    pub full_name: String,
+    pub full_name: &'a str,
 
     /// The visibility of this repo.
     #[serde(default)]
@@ -480,10 +520,10 @@ pub struct Repo {
     pub html_url: Url,
 
     /// The url to the github api of this repo.
-    pub url: String,
+    pub url: &'a str,
 
     /// Description of the repo.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The time in UTC when the repo was created.
     pub created_at: Dt,
@@ -495,10 +535,10 @@ pub struct Repo {
     pub pushed_at: Option<Dt>,
 
     /// The url used when doing git operations.
-    pub git_url: Option<String>,
+    pub git_url: Option<&'a str>,
 
     /// The url used when doing ssh operations.
-    pub ssh_url: Option<String>,
+    pub ssh_url: Option<&'a str>,
 
     /// The url used to clone this repo.
     pub clone_url: Option<Url>,
@@ -507,7 +547,7 @@ pub struct Repo {
     pub svn_url: Option<Url>,
 
     /// The homepage of this repo, if set.
-    pub homepage: Option<String>,
+    pub homepage: Option<&'a str>,
 
     /// Size of the repository.
     #[serde(default)]
@@ -522,7 +562,7 @@ pub struct Repo {
     pub watchers_count: UInt,
 
     /// The programming language used for this repo.
-    pub language: Option<String>,
+    pub language: Option<&'a str>,
 
     /// Does this repo allow issues.
     #[serde(default)]
@@ -549,7 +589,7 @@ pub struct Repo {
     pub forks_count: UInt,
 
     /// The url to the repository this repo mirrors.
-    pub mirror_url: Option<String>,
+    pub mirror_url: Option<&'a str>,
 
     /// Has this repo been archived.
     #[serde(default)]
@@ -564,7 +604,7 @@ pub struct Repo {
     pub open_issues_count: UInt,
 
     /// License of this repo.
-    pub license: Option<String>,
+    pub license: Option<&'a str>,
 
     /// Number of forks for the repo.
     #[serde(default)]
@@ -579,7 +619,7 @@ pub struct Repo {
     pub watchers: UInt,
 
     /// This repositories default branch.
-    pub default_branch: Option<String>,
+    pub default_branch: Option<&'a str>,
 
     /// Allow squash and merge in web merge.
     #[serde(default = "crate::api::common::true_fn")]
@@ -599,7 +639,7 @@ pub struct Repo {
 
     /// The topics this repo covers.
     #[serde(default)]
-    pub topics: Vec<String>,
+    pub topics: Vec<&'a str>,
 
     /// The set permissions of this repo.
     #[serde(default)]
@@ -828,4 +868,136 @@ pub struct Permissions {
     /// Is pulling permitted.
     #[serde(default)]
     pull: bool,
+}
+
+/// Permissions given to the installed app for accessing metadata, contents, and issues.
+#[derive(Clone, Debug, Deserialize)]
+pub struct AccessPermissions {
+    /// Permission for accessing actions.
+    #[serde(default)]
+    pub actions: RepoPermission,
+
+    /// Permission for accessing administration.
+    #[serde(default)]
+    pub administration: RepoPermission,
+
+    /// Permission for accessing checks.
+    #[serde(default)]
+    pub checks: RepoPermission,
+
+    /// Permission for accessing contents.
+    #[serde(default)]
+    pub contents: RepoPermission,
+
+    /// Permission for accessing content references.
+    #[serde(default)]
+    pub content_references: RepoPermission,
+
+    /// Permission for accessing deployments.
+    #[serde(default)]
+    pub deployments: RepoPermission,
+
+    /// Permission for accessing discussions.
+    #[serde(default)]
+    pub discussions: RepoPermission,
+
+    /// Permission for accessing environments.
+    #[serde(default)]
+    pub environments: RepoPermission,
+
+    /// Permission for accessing issues.
+    #[serde(default)]
+    pub issues: RepoPermission,
+
+    /// Permission for accessing members.
+    #[serde(default)]
+    pub members: RepoPermission,
+
+    /// Permission for accessing metadata.
+    #[serde(default)]
+    pub metadata: RepoPermission,
+
+    /// Permission for accessing organization administration.
+    #[serde(default)]
+    pub organization_administration: RepoPermission,
+
+    /// Permission for accessing organization hooks.
+    #[serde(default)]
+    pub organization_hooks: RepoPermission,
+
+    /// Permission for accessing organization packages.
+    #[serde(default)]
+    pub organization_packages: RepoPermission,
+
+    /// Permission for accessing organization plan.
+    #[serde(default)]
+    pub organization_plan: RepoPermission,
+
+    /// Permission for accessing organization projects.
+    #[serde(default)]
+    pub organization_projects: RepoPermission,
+
+    /// Permission for accessing organization secrets.
+    #[serde(default)]
+    pub organization_secrets: RepoPermission,
+
+    /// Permission for accessing organization self hosted runners.
+    #[serde(default)]
+    pub organization_self_hosted_runners: RepoPermission,
+
+    /// Permission for accessing organization user blocking.
+    #[serde(default)]
+    pub organization_user_blocking: RepoPermission,
+
+    /// Permission for accessing pages.
+    #[serde(default)]
+    pub pages: RepoPermission,
+
+    /// Permission for accessing packages.
+    #[serde(default)]
+    pub packages: RepoPermission,
+
+    /// Permission for accessing pull requests.
+    #[serde(default)]
+    pub pull_requests: RepoPermission,
+
+    /// Permission for accessing repository hooks.
+    #[serde(default)]
+    pub repository_hooks: RepoPermission,
+
+    /// Permission for accessing repository projects.
+    #[serde(default)]
+    pub repository_projects: RepoPermission,
+
+    /// Permission for accessing secrets.
+    #[serde(default)]
+    pub secrets: RepoPermission,
+
+    /// Permission for accessing secret scanning alerts.
+    #[serde(default)]
+    pub secret_scanning_alerts: RepoPermission,
+
+    /// Permission needed for accessing security events.
+    #[serde(default)]
+    pub security_events: RepoPermission,
+
+    /// Permission needed for accessing single file.
+    #[serde(default)]
+    pub single_file: RepoPermission,
+
+    /// Permission needed for accessing statuses.
+    #[serde(default)]
+    pub statuses: RepoPermission,
+
+    /// Permission needed for accessing team discussions.
+    #[serde(default)]
+    pub team_discussions: RepoPermission,
+
+    /// Permission needed for accessing workflows.
+    #[serde(default)]
+    pub workflows: RepoPermission,
+
+    /// Permission needed for accessing vulnerability alerts.
+    #[serde(default)]
+    pub vulnerability_alerts: RepoPermission,
 }

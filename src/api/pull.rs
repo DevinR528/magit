@@ -7,6 +7,7 @@ use crate::api::common::{
     Base, Dt, Head, IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
 };
 
+/// The actions that can be taken for a pull request.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PullAction {
@@ -64,6 +65,7 @@ pub enum PullAction {
     Unlocked,
 }
 
+/// The payload of a pull request event.
 #[derive(Clone, Debug, Deserialize)]
 pub struct PullEvent {
     /// The action that was performed.

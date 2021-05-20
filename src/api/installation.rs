@@ -5,10 +5,10 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::common::{
-    Dt, EventKind, IssueState, Label, LockReason, Org, Repo, RepoPermission,
-    RepoSelection, Type, UrlMap, User,
+    AccessPermissions, Dt, EventKind, Org, RepoSelection, Type, UrlMap, User,
 };
 
+/// The actions that can be taken in an installation event.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InstallationAction {
@@ -28,6 +28,7 @@ pub enum InstallationAction {
     NewPermissionsAccepted,
 }
 
+/// The payload of an installation event.
 #[derive(Clone, Debug, Deserialize)]
 pub struct InstallationEvent {
     /// The action that was performed.
@@ -75,7 +76,7 @@ pub struct Installation {
     pub target_type: Type,
 
     /// The permissions the app is given for each section.
-    pub permissions: Permissions,
+    pub permissions: AccessPermissions,
 
     /// Events this app has access to.
     pub events: Vec<EventKind>,
@@ -96,142 +97,10 @@ pub struct Installation {
     pub all_urls: UrlMap,
 }
 
-/// Permissions given to the installed app for accessing metadata, contents, and issues.
-#[derive(Clone, Debug, Deserialize)]
-pub struct Permissions {
-    /// Permission for accessing actions.
-    #[serde(default)]
-    pub actions: RepoPermission,
-
-    /// Permission for accessing administration.
-    #[serde(default)]
-    pub administration: RepoPermission,
-
-    /// Permission for accessing checks.
-    #[serde(default)]
-    pub checks: RepoPermission,
-
-    /// Permission for accessing contents.
-    #[serde(default)]
-    pub contents: RepoPermission,
-
-    /// Permission for accessing content references.
-    #[serde(default)]
-    pub content_references: RepoPermission,
-
-    /// Permission for accessing deployments.
-    #[serde(default)]
-    pub deployments: RepoPermission,
-
-    /// Permission for accessing discussions.
-    #[serde(default)]
-    pub discussions: RepoPermission,
-
-    /// Permission for accessing environments.
-    #[serde(default)]
-    pub environments: RepoPermission,
-
-    /// Permission for accessing issues.
-    #[serde(default)]
-    pub issues: RepoPermission,
-
-    /// Permission for accessing members.
-    #[serde(default)]
-    pub members: RepoPermission,
-
-    /// Permission for accessing metadata.
-    #[serde(default)]
-    pub metadata: RepoPermission,
-
-    /// Permission for accessing organization administration.
-    #[serde(default)]
-    pub organization_administration: RepoPermission,
-
-    /// Permission for accessing organization hooks.
-    #[serde(default)]
-    pub organization_hooks: RepoPermission,
-
-    /// Permission for accessing organization packages.
-    #[serde(default)]
-    pub organization_packages: RepoPermission,
-
-    /// Permission for accessing organization plan.
-    #[serde(default)]
-    pub organization_plan: RepoPermission,
-
-    /// Permission for accessing organization projects.
-    #[serde(default)]
-    pub organization_projects: RepoPermission,
-
-    /// Permission for accessing organization secrets.
-    #[serde(default)]
-    pub organization_secrets: RepoPermission,
-
-    /// Permission for accessing organization self hosted runners.
-    #[serde(default)]
-    pub organization_self_hosted_runners: RepoPermission,
-
-    /// Permission for accessing organization user blocking.
-    #[serde(default)]
-    pub organization_user_blocking: RepoPermission,
-
-    /// Permission for accessing pages.
-    #[serde(default)]
-    pub pages: RepoPermission,
-
-    /// Permission for accessing packages.
-    #[serde(default)]
-    pub packages: RepoPermission,
-
-    /// Permission for accessing pull requests.
-    #[serde(default)]
-    pub pull_requests: RepoPermission,
-
-    /// Permission for accessing repository hooks.
-    #[serde(default)]
-    pub repository_hooks: RepoPermission,
-
-    /// Permission for accessing repository projects.
-    #[serde(default)]
-    pub repository_projects: RepoPermission,
-
-    /// Permission for accessing secrets.
-    #[serde(default)]
-    pub secrets: RepoPermission,
-
-    /// Permission for accessing secret scanning alerts.
-    #[serde(default)]
-    pub secret_scanning_alerts: RepoPermission,
-
-    /// Permission needed for accessing security events.
-    #[serde(default)]
-    pub security_events: RepoPermission,
-
-    /// Permission needed for accessing single file.
-    #[serde(default)]
-    pub single_file: RepoPermission,
-
-    /// Permission needed for accessing statuses.
-    #[serde(default)]
-    pub statuses: RepoPermission,
-
-    /// Permission needed for accessing team discussions.
-    #[serde(default)]
-    pub team_discussions: RepoPermission,
-
-    /// Permission needed for accessing workflows.
-    #[serde(default)]
-    pub workflows: RepoPermission,
-
-    /// Permission needed for accessing vulnerability alerts.
-    #[serde(default)]
-    pub vulnerability_alerts: RepoPermission,
-}
-
 /// Information about repositories that the installation can access.
 #[derive(Clone, Debug, Deserialize)]
 pub struct ShortRepo {
-    /// Numeric Id of this installation.
+    /// Numeric Id of this repository.
     pub id: UInt,
 
     /// Numeric identifier of the repository.
