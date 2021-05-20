@@ -1,8 +1,14 @@
 [package]
 name = "magit"
 version = "0.1.0"
+authors = ["Devin R <devin.ragotzy@gmail.com>"]
+license = "MIT/Apache-2.0"
+description = "Stand alone Matrix Github bot"
+repository = "https://github.com/DevinR528/magit"
+keywords = ["matrix", "chat", "github", "bot"]
+categories = ["development-tools"]
+readme = "readme.md"
 edition = "2018"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 chrono = { version = "0.4.19", features = ["serde"] }
