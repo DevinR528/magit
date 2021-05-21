@@ -2,9 +2,12 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::common::{
-    default_null, AuthorAssociation, Base, Changes, Dt, Head, IssueState, Label, Links,
-    Milestone, Org, Repo, Team, UrlMap, User,
+use crate::api::{
+    common::{
+        datetime_opt, default_null, AuthorAssociation, Base, Changes, Dt, Head,
+        IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
+    },
+    installation::Installation,
 };
 
 /// The actions that can be taken for a pull request.
@@ -88,6 +91,12 @@ pub struct PullRequestEvent<'a> {
     #[serde(borrow)]
     pub repository: Repo<'a>,
 
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
+
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
     #[serde(borrow)]
@@ -146,9 +155,11 @@ pub struct PullRequest<'a> {
     pub updated_at: Dt,
 
     /// Time in UTC this pull request was closed.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub closed_at: Option<Dt>,
 
     /// Time in UTC this pull request was last updated.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub merged_at: Option<Dt>,
 
     /// The user who merged this pull request.
@@ -207,28 +218,23 @@ pub struct PullRequest<'a> {
     pub assignee: Option<User<'a>>,
 
     /// The `User`s assigned to the pull request.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub assignees: Vec<User<'a>>,
 
     /// The `User` requested to review the pull request.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub requested_reviewers: Vec<User<'a>>,
 
     /// The `Team`s requested to review the pull request.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub requested_teams: Vec<Team<'a>>,
 
     /// The labels that have been added to this pull request.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub labels: Vec<Label<'a>>,
 
     /// Milestones that have been added.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub milestones: Vec<Milestone<'a>>,
 
     /// Information about the head of this commit.
@@ -244,8 +250,7 @@ pub struct PullRequest<'a> {
     pub repository: Option<Repo<'a>>,
 
     /// All links related to this pull request.
-    #[serde(rename = "_links")]
-    #[serde(borrow)]
+    #[serde(rename = "_links", borrow)]
     pub links: Links<'a>,
 
     /// A map of all the github api urls.

@@ -30,6 +30,7 @@ pub struct Config {
     secret_key: String,
 }
 
+#[allow(unused)]
 pub struct Store {
     config: Config,
     to_matrix: Sender<String>,
@@ -58,6 +59,7 @@ pub fn app(to_matrix: Sender<String>) -> rocket::Rocket<rocket::Build> {
         .register("/", catchers![not_found])
 }
 
+#[allow(unused)]
 struct CommandBot {
     listener: Receiver<String>,
     sender: Sender<String>,
@@ -111,6 +113,7 @@ impl EventHandler for CommandBot {
     }
 }
 
+#[allow(unused)]
 async fn login_and_sync(
     homeserver_url: &str,
     username: String,
@@ -146,6 +149,7 @@ async fn login_and_sync(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[allow(unused)]
     let (to_matrix, from_gh) = channel(1024);
     // let (to_gh, mut from_matrix) = channel(1024);
 

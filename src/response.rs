@@ -3,7 +3,6 @@ use rocket::{
     data, data::FromData, http::Status, outcome::Outcome, request::Request, Data,
 };
 use sha2::Sha256;
-use tokio::io::AsyncReadExt;
 
 use crate::api::GitHubEvent;
 

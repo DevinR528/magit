@@ -5,7 +5,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::common::{
-    default_null,
+    datetime, datetime_opt, default_null,
     enums::{EventKind, IssueState, RepoCreationType, RepoPermission, Type},
     Dt, UrlMap,
 };
@@ -174,9 +174,11 @@ pub struct App<'a> {
     pub permissions: AccessPermissions,
 
     /// The time in UTC when the team was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// The time in UTC when the team was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 
     /// Events that this app has access to.
@@ -220,9 +222,22 @@ pub struct Branch<'a> {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Changes<'a> {
-    /// The changes made to the comment.
+    /// The changes made to the body.
+    ///
+    /// The is present for issues, pulls, and comments.
     #[serde(borrow)]
     body: Option<Body<'a>>,
+
+    /// The changes made to the title.
+    #[serde(borrow)]
+    title: Option<Body<'a>>,
+
+    /// The changes made to the name.
+    ///
+    /// This is present for releases, there may be other uses of it also Github's API
+    /// docs are so-so.
+    #[serde(borrow)]
+    name: Option<Body<'a>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -292,6 +307,23 @@ pub struct CommitInner<'a> {
     /// Information about the verification of this commit.
     #[serde(borrow)]
     pub verification: Verification<'a>,
+}
+
+/// Information about the author/committer.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Committer<'a> {
+    /// The git author's name.
+    pub name: &'a str,
+
+    /// The git author's email.
+    pub email: Option<&'a str>,
+
+    /// The UTC date of the latest commit.
+    #[serde(default, deserialize_with = "datetime_opt")]
+    pub date: Option<Dt>,
+
+    /// The author's github username.
+    pub username: Option<&'a str>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -404,15 +436,19 @@ pub struct Milestone<'a> {
     pub closed_issues: UInt,
 
     /// The time in UTC when the milestone was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// The time in UTC when the milestone was last updated.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub updated_at: Option<Dt>,
 
     /// The time in UTC when the milestone was closed.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub closed_at: Option<Dt>,
 
     /// The time in UTC when the milestone is due.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub due_on: Option<Dt>,
 }
 
@@ -487,9 +523,11 @@ pub struct Org<'a> {
     pub html_url: Url,
 
     /// Time in UTC this organization was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// Time in UTC this organization was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 
     /// Type of resource this is.
@@ -637,12 +675,15 @@ pub struct Repo<'a> {
     pub description: Option<&'a str>,
 
     /// The time in UTC when the repo was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// The time in UTC when the repo was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 
     /// The time in UTC when the repo was last pushed to.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub pushed_at: Option<Dt>,
 
     /// The url used when doing git operations.
@@ -729,6 +770,10 @@ pub struct Repo<'a> {
     #[serde(default)]
     pub watchers: UInt,
 
+    /// Number of stars.
+    #[serde(default)]
+    pub stargazers: UInt,
+
     /// This repositories default branch.
     pub default_branch: Option<&'a str>,
 
@@ -756,6 +801,7 @@ pub struct Repo<'a> {
     #[serde(default)]
     pub permissions: Permissions,
 
+    /// A map of all the github api urls.
     #[serde(flatten, default)]
     pub all_urls: UrlMap,
 }
@@ -810,15 +856,17 @@ pub struct Team<'a> {
     pub members_count: UInt,
 
     /// The time in UTC when the team was created.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub created_at: Option<Dt>,
 
     /// The time in UTC when the team was last updated.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub updated_at: Option<Dt>,
 
-    /// The time in UTC when the team was closed.
+    /// An owning organization of this team.
     pub organization: Option<Org<'a>>,
 
-    /// The time in UTC when the team is due.
+    /// The parent team.
     pub parent: Option<Box<Team<'a>>>,
 
     /// A map of all the github api urls.

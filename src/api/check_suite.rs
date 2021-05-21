@@ -3,7 +3,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    common::{default_null, App, Dt, Org, Repo, User},
+    common::{datetime, default_null, App, Committer, Dt, Org, Repo, User},
     installation::Installation,
 };
 
@@ -108,9 +108,11 @@ pub struct CheckSuite<'a> {
     pub head_commit: Option<HeadCommit<'a>>,
 
     /// The time in UTC when the check was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// The time in UTC when the check was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 }
 
@@ -257,11 +259,4 @@ pub struct HeadCommit<'a> {
     /// Name and email of the commit committer :p
     #[serde(borrow)]
     pub committer: Committer<'a>,
-}
-
-/// The author of a commit, identified by its name and email.
-#[derive(Clone, Debug, Deserialize)]
-pub struct Committer<'a> {
-    pub name: &'a str,
-    pub email: &'a str,
 }

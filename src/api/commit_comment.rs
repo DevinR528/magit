@@ -5,7 +5,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    common::{AuthorAssociation, Dt, Org, Repo, User},
+    common::{datetime, AuthorAssociation, Dt, Org, Repo, User},
     installation::Installation,
 };
 
@@ -79,9 +79,11 @@ pub struct CommitComment<'a> {
     pub commit_id: &'a str,
 
     /// Time in UTC this commit was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// Time in UTC this commit was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 
     /// The associated author of this commit.
