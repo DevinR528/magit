@@ -1,11 +1,10 @@
 use matrix_sdk::UInt;
 use serde::Deserialize;
-use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::common::{
-    default_null, AuthorAssociation, Base, Dt, Head, IssueState, Label, Links, Milestone,
-    Org, Repo, Team, UrlMap, User,
+    default_null, AuthorAssociation, Base, Changes, Dt, Head, IssueState, Label, Links,
+    Milestone, Org, Repo, Team, UrlMap, User,
 };
 
 /// The actions that can be taken for a pull request.
@@ -68,7 +67,7 @@ pub enum PullRequestAction {
 
 /// The payload of a pull request event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullRequestEvent {
+pub struct PullRequestEvent<'a> {
     /// The action that was performed.
     pub action: PullRequestAction,
 
@@ -78,33 +77,37 @@ pub struct PullRequestEvent {
     /// The changes to the comment if the action was edited.
     ///
     /// Only present for [`PullAction::Edited`].
-    // TODO: what is this
-    pub changes: Option<JsonValue>,
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
 
     /// Information about the pull request.
-    pub pull_request: PullRequest,
+    #[serde(borrow)]
+    pub pull_request: PullRequest<'a>,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullRequest {
+pub struct PullRequest<'a> {
     /// The api url of the pull request.
-    pub url: String,
+    pub url: &'a str,
 
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The public web page url.
     pub html_url: Url,
@@ -127,13 +130,14 @@ pub struct PullRequest {
     pub locked: bool,
 
     /// The title of this pull request.
-    pub title: String,
+    pub title: &'a str,
 
     /// Information about the user.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
     /// The body of the pull request message.
-    pub body: String,
+    pub body: &'a str,
 
     /// Time in UTC this pull request was created.
     pub created_at: Dt,
@@ -148,10 +152,10 @@ pub struct PullRequest {
     pub merged_at: Option<Dt>,
 
     /// The user who merged this pull request.
-    pub merged_by: Option<String>,
+    pub merged_by: Option<&'a str>,
 
     /// The SHA of the merge commit, if any.
-    pub merge_commit_sha: Option<String>,
+    pub merge_commit_sha: Option<&'a str>,
 
     /// The association of the user who opened the pull request.
     pub author_association: AuthorAssociation,
@@ -199,40 +203,50 @@ pub struct PullRequest {
     pub changed_files: UInt,
 
     /// The `User` assigned to the pull request.
-    pub assignee: Option<User>,
+    #[serde(borrow)]
+    pub assignee: Option<User<'a>>,
 
     /// The `User`s assigned to the pull request.
     #[serde(default)]
-    pub assignees: Vec<User>,
+    #[serde(borrow)]
+    pub assignees: Vec<User<'a>>,
 
     /// The `User` requested to review the pull request.
     #[serde(default)]
-    pub requested_reviewers: Vec<User>,
+    #[serde(borrow)]
+    pub requested_reviewers: Vec<User<'a>>,
 
     /// The `Team`s requested to review the pull request.
     #[serde(default)]
-    pub requested_teams: Vec<Team>,
+    #[serde(borrow)]
+    pub requested_teams: Vec<Team<'a>>,
 
     /// The labels that have been added to this pull request.
     #[serde(default)]
-    pub labels: Vec<Label>,
+    #[serde(borrow)]
+    pub labels: Vec<Label<'a>>,
 
     /// Milestones that have been added.
     #[serde(default)]
-    pub milestones: Vec<Milestone>,
+    #[serde(borrow)]
+    pub milestones: Vec<Milestone<'a>>,
 
     /// Information about the head of this commit.
-    pub head: Head,
+    #[serde(borrow)]
+    pub head: Head<'a>,
 
     /// Information about the base branch.
-    pub base: Base,
+    #[serde(borrow)]
+    pub base: Base<'a>,
 
     /// Information about the repository this pull request is against.
-    pub repository: Option<Repo>,
+    #[serde(borrow)]
+    pub repository: Option<Repo<'a>>,
 
     /// All links related to this pull request.
     #[serde(rename = "_links")]
-    pub links: Links,
+    #[serde(borrow)]
+    pub links: Links<'a>,
 
     /// A map of all the github api urls.
     ///

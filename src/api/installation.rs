@@ -30,35 +30,38 @@ pub enum InstallationAction {
 
 /// The payload of an installation event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct InstallationEvent {
+pub struct InstallationEvent<'a> {
     /// The action that was performed.
     pub action: InstallationAction,
 
     /// The GitHub App installation.
-    pub installation: Installation,
+    #[serde(borrow)]
+    pub installation: Installation<'a>,
 
     /// Brief information about the repositories this app has access to.
-    #[serde(default)]
-    pub repositories: Vec<ShortRepo>,
+    #[serde(default, borrow)]
+    pub repositories: Vec<ShortRepo<'a>>,
 
     /// Detailed information about the organization the app
     /// belongs to.
-    pub organization: Option<Org>,
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user of the app.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 
     /// Detailed information about the requester of the app.
-    pub requester: Option<User>,
+    pub requester: Option<User<'a>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Installation {
+pub struct Installation<'a> {
     /// Numeric Id of this installation.
     pub id: UInt,
 
     /// Detailed information about the user who installed the app.
-    pub account: User,
+    #[serde(borrow)]
+    pub account: User<'a>,
 
     /// Whether all repositories are selected or only a few.
     pub repository_selection: RepoSelection,
@@ -90,7 +93,7 @@ pub struct Installation {
     pub updated_at: Dt,
 
     /// The configuration file for this installed app.
-    pub single_file_name: String,
+    pub single_file_name: &'a str,
 
     /// A map of all the github api urls.
     #[serde(flatten, default)]
@@ -99,18 +102,18 @@ pub struct Installation {
 
 /// Information about repositories that the installation can access.
 #[derive(Clone, Debug, Deserialize)]
-pub struct ShortRepo {
+pub struct ShortRepo<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this repository.
-    pub name: String,
+    pub name: &'a str,
 
     /// The full name of this repository ie `owner/repo`.
-    pub full_name: String,
+    pub full_name: &'a str,
 
     /// Whether the repository is private or public.
     pub private: bool,

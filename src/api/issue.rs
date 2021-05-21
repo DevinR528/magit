@@ -1,10 +1,10 @@
 use matrix_sdk::UInt;
 use serde::Deserialize;
-use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::common::{
-    AuthorAssociation, Dt, IssueState, Label, LockReason, Milestone, Org, Repo, User,
+    AuthorAssociation, Changes, Dt, IssueState, Label, LockReason, Milestone, Org, Repo,
+    User,
 };
 
 /// The actions that can be taken for an issue event.
@@ -62,49 +62,55 @@ pub enum IssueAction {
 
 /// The payload of an issue event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct IssueEvent {
+pub struct IssueEvent<'a> {
     /// The action that was performed.
     pub action: IssueAction,
 
     /// Information about the issue.
-    pub issue: Issue,
+    #[serde(borrow)]
+    pub issue: Issue<'a>,
 
     /// The changes to the comment if the action was edited.
     ///
     /// Only present for [`crate::api::common::PullAction::Edited`].
-    // TODO: what is this
-    pub changes: Option<JsonValue>,
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
 
     /// The [`User`] who is assigned this issue.
-    pub assignee: Option<User>,
+    #[serde(borrow)]
+    pub assignee: Option<User<'a>>,
 
     /// The [`Label`] assigned to this issue.
-    pub label: Option<Label>,
+    #[serde(borrow)]
+    pub label: Option<Label<'a>>,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 /// Information about an issue.
 ///
 /// This can be used to represent pull request related responses.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Issue {
+pub struct Issue<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The api url of the issue.
-    pub url: String,
+    pub url: &'a str,
 
     /// The public web page url.
     pub html_url: Url,
@@ -120,34 +126,40 @@ pub struct Issue {
     pub locked: bool,
 
     /// The title of this issue.
-    pub title: String,
+    pub title: &'a str,
 
     /// Information about the user.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
     /// The body of the issue.
-    pub body: String,
+    pub body: &'a str,
 
     /// A list of labels attached to this issue.
     #[serde(default)]
-    pub labels: Vec<Label>,
+    #[serde(borrow)]
+    pub labels: Vec<Label<'a>>,
 
     /// The [`User`] who is assigned to this issue.
-    pub assignee: Option<User>,
+    #[serde(borrow)]
+    pub assignee: Option<User<'a>>,
 
     /// The [`User`]s who are assigned to this issue.
     #[serde(default)]
-    pub assignees: Vec<User>,
+    #[serde(borrow)]
+    pub assignees: Vec<User<'a>>,
 
     /// Milestone that have been added.
-    pub milestone: Option<Milestone>,
+    #[serde(borrow)]
+    pub milestone: Option<Milestone<'a>>,
 
     /// Number of comments.
     #[serde(default)]
     pub comments: UInt,
 
     /// Information about any linked pull requests.
-    pub pull_request: Option<IssuePullRequest>,
+    #[serde(borrow)]
+    pub pull_request: Option<IssuePullRequest<'a>>,
 
     /// Time in UTC this pull request was created.
     pub created_at: Dt,
@@ -167,9 +179,9 @@ pub struct Issue {
 
 /// Information about an pull requests linked to this issue.
 #[derive(Clone, Debug, Deserialize)]
-pub struct IssuePullRequest {
+pub struct IssuePullRequest<'a> {
     /// The api url of the pull request.
-    pub url: String,
+    pub url: &'a str,
 
     /// The public web page url.
     pub html_url: Url,

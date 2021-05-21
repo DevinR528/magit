@@ -29,46 +29,52 @@ pub enum CheckAction {
 
 /// The payload of a check suite event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckSuiteEvent {
+pub struct CheckSuiteEvent<'a> {
     /// The action that was performed.
     pub action: CheckAction,
 
     /// The suite of checks.
-    pub check_suite: CheckSuite,
+    #[serde(borrow)]
+    pub check_suite: CheckSuite<'a>,
 
     /// Information about the repositories this app has access to.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Information about Github app installation.
     ///
     /// This is only present if the event is sent from said app.
-    pub installation: Option<Installation>,
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the user of the app.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 
     /// Detailed information about the requester of the app.
-    pub requester: Option<User>,
+    #[serde(borrow)]
+    pub requester: Option<User<'a>>,
 }
 
 /// Information about a suite of checks.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckSuite {
+pub struct CheckSuite<'a> {
     /// Numeric Id of this installation.
     pub id: UInt,
 
     /// Numeric identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// Name of the head branch.
-    pub head_branch: String,
+    pub head_branch: &'a str,
 
     /// The SHA of the head branch.
-    pub head_sha: String,
+    pub head_sha: &'a str,
 
     /// The status of this check.
     #[serde(default, deserialize_with = "default_null")]
@@ -79,16 +85,17 @@ pub struct CheckSuite {
     pub conclusion: ConclusionStatus,
 
     /// The SHA of the branch before.
-    pub before: String,
+    pub before: &'a str,
 
     /// The SHA of the branch after.
-    pub after: String,
+    pub after: &'a str,
 
     /// The pull request being checked.
-    pub pull_requests: Vec<CheckPullRequest>,
+    pub pull_requests: Vec<CheckPullRequest<'a>>,
 
     /// The app that generated this check.
-    pub app: App,
+    #[serde(borrow)]
+    pub app: App<'a>,
 
     /// The number of check runs.
     #[serde(default, deserialize_with = "default_null")]
@@ -98,7 +105,7 @@ pub struct CheckSuite {
     pub check_runs_url: Option<Url>,
 
     /// The head commit.
-    pub head_commit: Option<HeadCommit>,
+    pub head_commit: Option<HeadCommit<'a>>,
 
     /// The time in UTC when the check was created.
     pub created_at: Dt,
@@ -166,7 +173,7 @@ impl Default for ConclusionStatus {
 
 /// Information about pull requests being checked.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckPullRequest {
+pub struct CheckPullRequest<'a> {
     /// The github API url of the pull request.
     pub url: Url,
 
@@ -177,43 +184,47 @@ pub struct CheckPullRequest {
     pub number: UInt,
 
     /// The head of this pull request.
-    pub head: HeadRef,
+    #[serde(borrow)]
+    pub head: HeadRef<'a>,
 
     /// The base of this pull request.
-    pub base: BaseRef,
+    #[serde(borrow)]
+    pub base: BaseRef<'a>,
 }
 
 /// Information about the head.
 #[derive(Clone, Debug, Deserialize)]
-pub struct HeadRef {
+pub struct HeadRef<'a> {
     /// The github API url of the head.
     #[serde(rename = "ref")]
-    pub ref_: String,
+    pub ref_: &'a str,
 
     /// The SHA of this head.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// Information about the related head.
-    pub repo: RepoRef,
+    #[serde(borrow)]
+    pub repo: RepoRef<'a>,
 }
 
 /// Information about the base.
 #[derive(Clone, Debug, Deserialize)]
-pub struct BaseRef {
+pub struct BaseRef<'a> {
     /// The github API url of the base.
     #[serde(rename = "ref")]
-    pub ref_: String,
+    pub ref_: &'a str,
 
     /// The SHA of this base.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// Information about the related base.
-    pub repo: RepoRef,
+    #[serde(borrow)]
+    pub repo: RepoRef<'a>,
 }
 
 /// Information about the repository.
 #[derive(Clone, Debug, Deserialize)]
-pub struct RepoRef {
+pub struct RepoRef<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
 
@@ -221,34 +232,36 @@ pub struct RepoRef {
     pub url: Url,
 
     /// The name of this repository.
-    pub name: String,
+    pub name: &'a str,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[non_exhaustive]
-pub struct HeadCommit {
+pub struct HeadCommit<'a> {
     /// SHA of the head commit.
-    pub id: String,
+    pub id: &'a str,
 
     /// SHA of the tree this commit is a part of.
-    pub tree_id: String,
+    pub tree_id: &'a str,
 
     /// Commit message.
-    pub message: String,
+    pub message: &'a str,
 
     /// Timestamp of this commit.
     pub timestamp: Dt,
 
     /// Name and email of the commit author.
-    pub author: Committer,
+    #[serde(borrow)]
+    pub author: Committer<'a>,
 
     /// Name and email of the commit committer :p
-    pub committer: Committer,
+    #[serde(borrow)]
+    pub committer: Committer<'a>,
 }
 
 /// The author of a commit, identified by its name and email.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Committer {
-    pub name: String,
-    pub email: String,
+pub struct Committer<'a> {
+    pub name: &'a str,
+    pub email: &'a str,
 }
