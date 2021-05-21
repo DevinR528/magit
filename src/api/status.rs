@@ -2,7 +2,10 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::common::{Branch, Commit, Org, Repo, User};
+use crate::api::{
+    common::{Branch, Commit, Org, Repo, User},
+    installation::Installation,
+};
 
 /// The state of the status event.
 #[derive(Clone, Debug, Deserialize)]
@@ -42,6 +45,12 @@ pub struct StatusEvent<'a> {
 
     /// Detailed information about the repository that was stared.
     pub repository: Repo<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.

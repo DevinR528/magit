@@ -2,9 +2,12 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::common::{
-    AuthorAssociation, Changes, Dt, IssueState, Label, LockReason, Milestone, Org, Repo,
-    User,
+use crate::api::{
+    common::{
+        datetime, datetime_opt, AuthorAssociation, Changes, Dt, IssueState, Label,
+        LockReason, Milestone, Org, Repo, User,
+    },
+    installation::Installation,
 };
 
 /// The actions that can be taken for an issue event.
@@ -88,6 +91,12 @@ pub struct IssueEvent<'a> {
     #[serde(borrow)]
     pub repository: Repo<'a>,
 
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
+
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
     #[serde(borrow)]
@@ -136,8 +145,7 @@ pub struct Issue<'a> {
     pub body: &'a str,
 
     /// A list of labels attached to this issue.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub labels: Vec<Label<'a>>,
 
     /// The [`User`] who is assigned to this issue.
@@ -145,8 +153,7 @@ pub struct Issue<'a> {
     pub assignee: Option<User<'a>>,
 
     /// The [`User`]s who are assigned to this issue.
-    #[serde(default)]
-    #[serde(borrow)]
+    #[serde(default, borrow)]
     pub assignees: Vec<User<'a>>,
 
     /// Milestone that have been added.
@@ -162,12 +169,15 @@ pub struct Issue<'a> {
     pub pull_request: Option<IssuePullRequest<'a>>,
 
     /// Time in UTC this pull request was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// Time in UTC this pull request was last updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 
     /// Time in UTC this pull request was closed.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub closed_at: Option<Dt>,
 
     /// The author associated with this issue.

@@ -4,6 +4,7 @@ use url::Url;
 
 use crate::api::{
     common::{AuthorAssociation, Changes, Dt, Links, Org, Repo, User},
+    installation::Installation,
     pull::PullRequest,
 };
 
@@ -49,6 +50,12 @@ pub struct PullRequestReviewEvent<'a> {
     /// Detailed information about the repository that was stared.
     #[serde(borrow)]
     pub repository: Repo<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.

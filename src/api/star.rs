@@ -1,6 +1,9 @@
 use serde::Deserialize;
 
-use crate::api::common::{Dt, Org, Repo, User};
+use crate::api::{
+    common::{Dt, Org, Repo, User},
+    installation::Installation,
+};
 
 /// The specific actions that a star event has.
 #[derive(Clone, Debug, Deserialize)]
@@ -22,6 +25,12 @@ pub struct StarEvent<'a> {
     /// Detailed information about the repository that was stared.
     #[serde(borrow)]
     pub repository: Repo<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.

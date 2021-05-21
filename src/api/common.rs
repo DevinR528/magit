@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt};
+use std::{borrow::Cow, collections::BTreeMap, fmt};
 
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
@@ -11,9 +11,9 @@ pub use enums::{
     RepoPermission, RepoSelection, Type,
 };
 pub use structs::{
-    AccessPermissions, App, Base, Branch, Changes, Commit, CommitInner, CommitTree, Head,
-    Label, Links, Milestone, Org, Permissions, Plan, Repo, ShortUser, Team, User,
-    Verification,
+    AccessPermissions, App, Base, Branch, Changes, Commit, CommitInner, CommitTree,
+    Committer, Head, Label, Links, Milestone, Org, Permissions, Plan, Repo, ShortUser,
+    Team, User, Verification,
 };
 
 pub type Dt = DateTime<Utc>;
@@ -77,4 +77,48 @@ where
 {
     let opt = Option::deserialize(deserializer)?;
     Ok(opt.unwrap_or_default())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum StringOrUInt<'a> {
+    UInt(i64),
+    String(Cow<'a, str>),
+}
+
+pub fn datetime<'de, D>(deser: D) -> Result<Dt, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let ts = StringOrUInt::deserialize(deser)?;
+    match ts {
+        StringOrUInt::UInt(timestamp) => Ok(Dt::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(timestamp, 0)
+                .ok_or_else(|| D::Error::custom("timestamp exceeded bounds"))?,
+            chrono::Utc,
+        )),
+        StringOrUInt::String(datetime) => datetime.parse().map_err(D::Error::custom),
+    }
+}
+
+pub fn datetime_opt<'de, D>(deser: D) -> Result<Option<Dt>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let ts = StringOrUInt::deserialize(deser);
+    Ok(Some(match ts {
+        Ok(StringOrUInt::UInt(timestamp)) => Dt::from_utc(
+            chrono::NaiveDateTime::from_timestamp_opt(timestamp, 0)
+                .ok_or_else(|| D::Error::custom("timestamp exceeded bounds"))?,
+            chrono::Utc,
+        ),
+        Ok(StringOrUInt::String(datetime)) => {
+            datetime.parse().map_err(D::Error::custom)?
+        }
+        _ => return Ok(None),
+    }))
 }

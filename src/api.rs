@@ -2,13 +2,17 @@ mod check_run;
 mod check_suite;
 mod commit_comment;
 mod common;
+mod create;
 mod installation;
 mod issue;
 mod issue_comment;
 mod pull;
 mod pull_review;
+mod push;
+mod release;
 mod star;
 mod status;
+mod watch;
 
 use check_run::CheckRunEvent;
 use check_suite::CheckSuiteEvent;
@@ -18,6 +22,8 @@ use issue::IssueEvent;
 use issue_comment::IssueCommentEvent;
 use pull::PullRequestEvent;
 use pull_review::PullRequestReviewEvent;
+use push::PushEvent;
+use release::ReleaseEvent;
 use star::StarEvent;
 use status::StatusEvent;
 
@@ -25,6 +31,7 @@ use status::StatusEvent;
 ///
 /// `GithubEvent` does not implement `Deserialize` because there is no information in the
 /// payload to find which variant, that information is in the request header.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum GitHubEvent<'req> {
     /// The check run payload of a github webhook.
@@ -59,10 +66,10 @@ pub enum GitHubEvent<'req> {
     PullRequestReviewComment(serde_json::Value),
 
     /// The push payload of a github webhook.
-    Push(serde_json::Value),
+    Push(PushEvent<'req>),
 
     /// The release comment payload of a github webhook.
-    Release(serde_json::Value),
+    Release(ReleaseEvent<'req>),
 
     /// The stared payload of a github webhook.
     Star(StarEvent<'req>),
@@ -82,7 +89,8 @@ mod test {
         check_suite::{CheckAction, CheckSuite, CheckSuiteEvent},
         commit_comment::{CommitComment, CommitCommentAction, CommitCommentEvent},
         common::{
-            App, AuthorAssociation, Commit, CommitInner, IssueState, Repo, Type, User,
+            App, AuthorAssociation, Commit, CommitInner, Committer, IssueState, Repo,
+            Type, User,
         },
         installation::{Installation, InstallationAction, InstallationEvent},
         issue::{Issue, IssueAction, IssueEvent},
@@ -91,6 +99,8 @@ mod test {
         pull_review::{
             PullRequestReview, PullRequestReviewAction, PullRequestReviewEvent,
         },
+        push::PushEvent,
+        release::{Release, ReleaseAction, ReleaseEvent},
         star::{StarAction, StarEvent},
         status::{StatusEvent, StatusState},
     };
@@ -382,6 +392,56 @@ mod test {
                 && !sender_urls.is_empty()
                 && !all_urls.is_empty()
                 && !pull_urls.is_empty()
+
+        ))
+    }
+
+    #[test]
+    fn push() {
+        let json = include_str!("../test_json/push.json");
+
+        let jd = &mut serde_json::Deserializer::from_str(json);
+        let push = serde_path_to_error::deserialize::<_, PushEvent>(jd).unwrap();
+
+        assert!(matches!(
+            push,
+            PushEvent {
+                created, deleted,
+                pusher: Committer { name: committer_name, .. },
+                repository: Repo { name, all_urls, .. },
+                sender: User { kind: Type::User, all_urls: sender_urls, .. },
+                organization: None,
+                ..
+            } if name == "Hello-World"
+                && committer_name == "Codertocat"
+                && !created && deleted
+                && !sender_urls.is_empty()
+                && !all_urls.is_empty()
+
+        ))
+    }
+
+    #[test]
+    fn release() {
+        let json = include_str!("../test_json/release.json");
+
+        let jd = &mut serde_json::Deserializer::from_str(json);
+        let release = serde_path_to_error::deserialize::<_, ReleaseEvent>(jd).unwrap();
+
+        assert!(matches!(
+            release,
+            ReleaseEvent {
+                action: ReleaseAction::Published,
+                release: Release { target_commitish, assets, .. },
+                repository: Repo { name, all_urls, .. },
+                sender: User { kind: Type::User, all_urls: sender_urls, .. },
+                organization: None,
+                ..
+            } if name == "Hello-World"
+                && target_commitish == "master"
+                && assets.is_empty()
+                && !sender_urls.is_empty()
+                && !all_urls.is_empty()
 
         ))
     }

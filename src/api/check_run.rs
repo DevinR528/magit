@@ -6,7 +6,7 @@ use crate::api::{
     check_suite::{
         CheckAction, CheckPullRequest, CheckStatus, CheckSuite, ConclusionStatus,
     },
-    common::{default_null, App, Dt, Org, Repo, User},
+    common::{datetime, datetime_opt, default_null, App, Dt, Org, Repo, User},
     installation::Installation,
 };
 
@@ -68,9 +68,11 @@ pub struct CheckRun<'a> {
     pub conclusion: ConclusionStatus,
 
     /// The time in UTC when the check run was started.
+    #[serde(deserialize_with = "datetime")]
     pub started_at: Dt,
 
     /// The time in UTC when the check run was completed.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub completed_at: Option<Dt>,
 
     /// The pull request being checked.
@@ -138,8 +140,10 @@ pub struct Deployment<'a> {
     pub description: Option<&'a str>,
 
     /// The time in UTC when the check run was created.
+    #[serde(deserialize_with = "datetime")]
     pub created_at: Dt,
 
     /// The time in UTC when the check run was updated.
+    #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
 }

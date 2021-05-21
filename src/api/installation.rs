@@ -1,11 +1,9 @@
-use std::borrow::Cow;
-
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
 use crate::api::common::{
-    AccessPermissions, Dt, EventKind, Org, RepoSelection, Type, UrlMap, User,
+    datetime, AccessPermissions, Dt, EventKind, Org, RepoSelection, Type, UrlMap, User,
 };
 
 /// The actions that can be taken in an installation event.
@@ -117,29 +115,4 @@ pub struct ShortRepo<'a> {
 
     /// Whether the repository is private or public.
     pub private: bool,
-}
-
-fn datetime<'de, D>(deser: D) -> Result<Dt, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    use serde::de::Error;
-
-    #[derive(Debug, Deserialize)]
-    #[serde(untagged)]
-    enum StringOrUInt<'a> {
-        UInt(i64),
-        String(Cow<'a, str>),
-    }
-
-    let ts = StringOrUInt::deserialize(deser)?;
-    println!("{:?}", ts);
-    match ts {
-        StringOrUInt::UInt(timestamp) => Ok(Dt::from_utc(
-            chrono::NaiveDateTime::from_timestamp_opt(timestamp, 0)
-                .ok_or_else(|| D::Error::custom("timestamp exceeded bounds"))?,
-            chrono::Utc,
-        )),
-        StringOrUInt::String(datetime) => datetime.parse().map_err(D::Error::custom),
-    }
 }
