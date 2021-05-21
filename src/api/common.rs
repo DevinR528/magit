@@ -7,8 +7,8 @@ mod enums;
 mod structs;
 
 pub use enums::{
-    EventKind, IssueState, LockReason, RepoCreationType, RepoPermission, RepoSelection,
-    Type,
+    AuthorAssociation, EventKind, IssueState, LockReason, RepoCreationType,
+    RepoPermission, RepoSelection, Type,
 };
 pub use structs::{
     AccessPermissions, App, Base, Branch, Commit, CommitInner, CommitTree, Head, Label,
@@ -68,3 +68,12 @@ impl<'de> Deserialize<'de> for UrlMap {
 }
 
 pub(crate) const fn true_fn() -> bool { true }
+
+pub(crate) fn default_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Default + Deserialize<'de>,
+    D: serde::de::Deserializer<'de>,
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}

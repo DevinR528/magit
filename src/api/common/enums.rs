@@ -206,3 +206,20 @@ pub enum EventKind {
     WorkflowDispatch,
     WorkflowRun,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AuthorAssociation {
+    Collaborator,
+    Contributor,
+    FirstTime,
+    FirstTimeContributor,
+    Mannequin,
+    Member,
+    Owner,
+    None,
+}
+
+impl Default for AuthorAssociation {
+    fn default() -> Self { Self::None }
+}

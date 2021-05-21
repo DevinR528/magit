@@ -4,13 +4,14 @@ use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::common::{
-    Base, Dt, Head, IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
+    default_null, AuthorAssociation, Base, Dt, Head, IssueState, Label, Links, Milestone,
+    Org, Repo, Team, UrlMap, User,
 };
 
 /// The actions that can be taken for a pull request.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum PullAction {
+pub enum PullRequestAction {
     /// Reviewer assigned.
     Assigned,
 
@@ -67,9 +68,9 @@ pub enum PullAction {
 
 /// The payload of a pull request event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullEvent {
+pub struct PullRequestEvent {
     /// The action that was performed.
-    pub action: PullAction,
+    pub action: PullRequestAction,
 
     /// The pull request number.
     pub number: UInt,
@@ -118,6 +119,7 @@ pub struct PullRequest {
     pub number: UInt,
 
     /// State of this pull request.
+    #[serde(default, deserialize_with = "default_null")]
     pub state: IssueState,
 
     /// Is this pull request locked.
@@ -152,7 +154,7 @@ pub struct PullRequest {
     pub merge_commit_sha: Option<String>,
 
     /// The association of the user who opened the pull request.
-    pub author_association: String,
+    pub author_association: AuthorAssociation,
 
     /// Is this pull request a draft.
     pub draft: Option<bool>,

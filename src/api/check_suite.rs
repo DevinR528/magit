@@ -3,7 +3,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    common::{App, Dt, Org, Repo, User},
+    common::{default_null, App, Dt, Org, Repo, User},
     installation::Installation,
 };
 
@@ -27,38 +27,37 @@ pub enum CheckAction {
     RequestedAction,
 }
 
-/// The payload of a check event.
+/// The payload of a check suite event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckEvent<'a> {
+pub struct CheckSuiteEvent {
     /// The action that was performed.
     pub action: CheckAction,
 
     /// The suite of checks.
-    #[serde(borrow)]
-    pub check_suite: CheckSuite<'a>,
+    pub check_suite: CheckSuite,
 
     /// Information about the repositories this app has access to.
-    pub repository: Repo<'a>,
+    pub repository: Repo,
 
     /// Detailed information about the organization the app
     /// belongs to.
-    pub organization: Option<Org<'a>>,
+    pub organization: Option<Org>,
 
     /// Information about Github app installation.
     ///
     /// This is only present if the event is sent from said app.
-    pub installation: Option<Installation<'a>>,
+    pub installation: Option<Installation>,
 
     /// Detailed information about the user of the app.
-    pub sender: User<'a>,
+    pub sender: User,
 
     /// Detailed information about the requester of the app.
-    pub requester: Option<User<'a>>,
+    pub requester: Option<User>,
 }
 
 /// Information about a suite of checks.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckSuite<'a> {
+pub struct CheckSuite {
     /// Numeric Id of this installation.
     pub id: UInt,
 
@@ -72,11 +71,11 @@ pub struct CheckSuite<'a> {
     pub head_sha: String,
 
     /// The status of this check.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "default_null")]
     pub status: CheckStatus,
 
     /// If this is not none then the check has finished with a status.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "default_null")]
     pub conclusion: ConclusionStatus,
 
     /// The SHA of the branch before.
@@ -86,25 +85,25 @@ pub struct CheckSuite<'a> {
     pub after: String,
 
     /// The pull request being checked.
-    #[serde(borrow)]
-    pub pull_requests: Vec<CheckPullRequest<'a>>,
+    pub pull_requests: Vec<CheckPullRequest>,
 
     /// The app that generated this check.
     pub app: App,
 
     /// The number of check runs.
+    #[serde(default, deserialize_with = "default_null")]
     pub latest_check_runs_count: UInt,
 
     /// The github API url of this check.
-    pub check_runs_url: Url,
+    pub check_runs_url: Option<Url>,
 
     /// The head commit.
-    pub head_commit: HeadCommit,
+    pub head_commit: Option<HeadCommit>,
 
-    /// The time in UTC when the team was created.
+    /// The time in UTC when the check was created.
     pub created_at: Dt,
 
-    /// The time in UTC when the team was last updated.
+    /// The time in UTC when the check was last updated.
     pub updated_at: Dt,
 }
 
@@ -167,7 +166,7 @@ impl Default for ConclusionStatus {
 
 /// Information about pull requests being checked.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckPullRequest<'a> {
+pub struct CheckPullRequest {
     /// The github API url of the pull request.
     pub url: Url,
 
@@ -178,47 +177,43 @@ pub struct CheckPullRequest<'a> {
     pub number: UInt,
 
     /// The head of this pull request.
-    #[serde(borrow)]
-    pub head: HeadRef<'a>,
+    pub head: HeadRef,
 
     /// The base of this pull request.
-    #[serde(borrow)]
-    pub base: BaseRef<'a>,
+    pub base: BaseRef,
 }
 
 /// Information about the head.
 #[derive(Clone, Debug, Deserialize)]
-pub struct HeadRef<'a> {
+pub struct HeadRef {
     /// The github API url of the head.
     #[serde(rename = "ref")]
-    pub ref_: &'a str,
+    pub ref_: String,
 
     /// The SHA of this head.
-    pub sha: &'a str,
+    pub sha: String,
 
     /// Information about the related head.
-    #[serde(borrow)]
-    pub repo: RepoRef<'a>,
+    pub repo: RepoRef,
 }
 
 /// Information about the base.
 #[derive(Clone, Debug, Deserialize)]
-pub struct BaseRef<'a> {
+pub struct BaseRef {
     /// The github API url of the base.
     #[serde(rename = "ref")]
-    pub ref_: &'a str,
+    pub ref_: String,
 
     /// The SHA of this base.
-    pub sha: &'a str,
+    pub sha: String,
 
     /// Information about the related base.
-    #[serde(borrow)]
-    pub repo: RepoRef<'a>,
+    pub repo: RepoRef,
 }
 
 /// Information about the repository.
 #[derive(Clone, Debug, Deserialize)]
-pub struct RepoRef<'a> {
+pub struct RepoRef {
     /// Numeric Id of this repository.
     pub id: UInt,
 
@@ -226,7 +221,7 @@ pub struct RepoRef<'a> {
     pub url: Url,
 
     /// The name of this repository.
-    pub name: &'a str,
+    pub name: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]

@@ -103,7 +103,7 @@ pub struct ShortRepo {
     /// Numeric Id of this repository.
     pub id: UInt,
 
-    /// Numeric identifier of the repository.
+    /// String identifier of the repository.
     pub node_id: String,
 
     /// The name of this repository.

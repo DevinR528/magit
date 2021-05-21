@@ -3,7 +3,9 @@ use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use url::Url;
 
-use crate::api::common::{Dt, IssueState, Label, LockReason, Milestone, Org, Repo, User};
+use crate::api::common::{
+    AuthorAssociation, Dt, IssueState, Label, LockReason, Milestone, Org, Repo, User,
+};
 
 /// The actions that can be taken for an issue event.
 #[derive(Clone, Debug, Deserialize)]
@@ -157,10 +159,10 @@ pub struct Issue {
     pub closed_at: Option<Dt>,
 
     /// The author associated with this issue.
-    pub author_association: String,
+    pub author_association: AuthorAssociation,
 
     /// The reason this issue was locked.
-    pub active_lock_reason: LockReason,
+    pub active_lock_reason: Option<LockReason>,
 }
 
 /// Information about an pull requests linked to this issue.
