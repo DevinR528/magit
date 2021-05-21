@@ -12,49 +12,52 @@ use crate::api::{
 
 /// The payload of a check run event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckRunEvent {
+pub struct CheckRunEvent<'a> {
     /// The action that was performed.
     pub action: CheckAction,
 
     /// The checks to run.
-    pub check_run: CheckRun,
+    #[serde(borrow)]
+    pub check_run: CheckRun<'a>,
 
     /// Information about the repositories this app has access to.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
-    pub organization: Option<Org>,
+    pub organization: Option<Org<'a>>,
 
     /// Information about Github app installation.
     ///
     /// This is only present if the event is sent from said app.
-    pub installation: Option<Installation>,
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the user of the app.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 /// Information about a suite of checks.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CheckRun {
+pub struct CheckRun<'a> {
     /// Numeric Id of this installation.
     pub id: UInt,
 
     /// Numeric identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The SHA of the head branch.
-    pub head_sha: String,
+    pub head_sha: &'a str,
 
     /// The api url of the pull request.
-    pub url: String,
+    pub url: &'a str,
 
     /// A reference for the run on the integrators system.
-    pub external_id: String,
+    pub external_id: &'a str,
 
     /// The api url of the pull request.
-    pub details_url: String,
+    pub details_url: &'a str,
 
     /// The status of this check.
     #[serde(default, deserialize_with = "default_null")]
@@ -71,32 +74,37 @@ pub struct CheckRun {
     pub completed_at: Option<Dt>,
 
     /// The pull request being checked.
-    pub pull_requests: Vec<CheckPullRequest>,
+    #[serde(borrow)]
+    pub pull_requests: Vec<CheckPullRequest<'a>>,
 
     /// The app that generated this check.
-    pub app: App,
+    #[serde(borrow)]
+    pub app: App<'a>,
 
     /// The suite of checks.
-    pub check_suite: CheckSuite,
+    #[serde(borrow)]
+    pub check_suite: CheckSuite<'a>,
 
     /// Output from the checks running.
-    pub output: Output,
+    #[serde(borrow)]
+    pub output: Output<'a>,
 
     /// Information about the deployment.
-    pub deployment: Deployment,
+    #[serde(borrow)]
+    pub deployment: Deployment<'a>,
 }
 
 /// The output from a check.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Output {
+pub struct Output<'a> {
     /// Title of this check run.
-    pub title: Option<String>,
+    pub title: Option<&'a str>,
 
     /// Summary of the check.
-    pub summary: Option<String>,
+    pub summary: Option<&'a str>,
 
     /// The api url of the pull request.
-    pub text: Option<String>,
+    pub text: Option<&'a str>,
 
     /// Number of annotations on this check.
     pub annotations_count: UInt,
@@ -107,7 +115,7 @@ pub struct Output {
 
 /// Information about the deployment of this check.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Deployment {
+pub struct Deployment<'a> {
     /// The api url of the check run.
     pub url: Url,
 
@@ -115,19 +123,19 @@ pub struct Deployment {
     pub id: UInt,
 
     /// Numeric identifier of the deployment.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The task being run.
-    pub task: String,
+    pub task: &'a str,
 
     /// The current environment for this check.
-    pub environment: String,
+    pub environment: &'a str,
 
     /// The original environment for this check.
-    pub original_environment: String,
+    pub original_environment: &'a str,
 
     /// The api url of the check run.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The time in UTC when the check run was created.
     pub created_at: Dt,

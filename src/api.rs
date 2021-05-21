@@ -73,7 +73,7 @@ pub enum GitHubEvent<'req> {
 
 #[cfg(test)]
 mod test {
-    use std::path::PathBuf;
+    use std::path::Path;
 
     use matrix_sdk::uint;
 
@@ -313,7 +313,7 @@ mod test {
                 organization: None,
                 installation: None,
                 ..
-            } if path == Some(PathBuf::from("hello/world.rs"))
+            } if path == Some(Path::new("hello/world.rs"))
                 && id == uint!(33548674)
                 && position == Some(uint!(10))
                 && line == Some(uint!(10))
@@ -347,7 +347,7 @@ mod test {
                 organization: None,
                 installation: None,
                 ..
-            } if body == Some("You are totally right! I'll get this fixed right away.".to_owned())
+            } if body == Some("You are totally right! I'll get this fixed right away.")
                 && id == uint!(492700400)
                 && number == uint!(1)
                 && !sender_urls.is_empty()

@@ -16,35 +16,39 @@ pub enum StatusState {
 
 /// The payload of a status event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct StatusEvent {
+pub struct StatusEvent<'a> {
     /// The unique identifier of the status.
     pub id: UInt,
 
     /// The commit sha
-    pub sha: String,
+    pub sha: &'a str,
 
     /// One of `pending`, `success`, `failure`, or `error`.
     pub state: StatusState,
 
     /// Information about this particular commit.
-    pub commit: Commit,
+    #[serde(borrow)]
+    pub commit: Commit<'a>,
 
     /// The optional human-readable description added to the status.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The optional link added to the status.
     pub target_url: Option<Url>,
 
     /// A `Vec<Branch>` containing the branches information.
-    pub branches: Vec<Branch>,
+    #[serde(default, borrow)]
+    pub branches: Vec<Branch<'a>>,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }

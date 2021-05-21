@@ -12,7 +12,7 @@ pub enum StarAction {
 
 /// The payload of a star event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct StarEvent {
+pub struct StarEvent<'a> {
     /// One of `created` or `deleted`.
     pub action: StarAction,
 
@@ -20,12 +20,15 @@ pub struct StarEvent {
     pub starred_at: Dt,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }

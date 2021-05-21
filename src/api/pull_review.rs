@@ -1,10 +1,9 @@
 use matrix_sdk::UInt;
 use serde::Deserialize;
-use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::{
-    common::{AuthorAssociation, Dt, Links, Org, Repo, User},
+    common::{AuthorAssociation, Changes, Dt, Links, Org, Repo, User},
     pull::PullRequest,
 };
 
@@ -29,44 +28,49 @@ pub enum PullRequestReviewAction {
 
 /// The payload of a pull request review event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullRequestReviewEvent {
+pub struct PullRequestReviewEvent<'a> {
     /// The action that was performed.
     pub action: PullRequestReviewAction,
 
     /// The changes to the comment if the action was edited.
     ///
     /// Only present for [`PullAction::Edited`].
-    // TODO: what is this
-    pub changes: Option<JsonValue>,
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
 
     /// Information about the pull request.
-    pub pull_request: PullRequest,
+    #[serde(borrow)]
+    pub pull_request: PullRequest<'a>,
 
     /// The review that was affected.
-    pub review: PullRequestReview,
+    #[serde(borrow)]
+    pub review: PullRequestReview<'a>,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 /// The review of a pull request.
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullRequestReview {
+pub struct PullRequestReview<'a> {
     /// Numeric Id of this review.
     pub id: UInt,
 
     /// String identifier of the review.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// Information about the owner of this review.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
     /// The public web page url.
     pub html_url: Url,
@@ -76,7 +80,7 @@ pub struct PullRequestReview {
 
     /// The state of the pull request review.
     // TODO: make this an enum
-    pub state: String,
+    pub state: &'a str,
 
     /// The Github api url for the related pull request.
     pub pull_request_url: Url,
@@ -85,6 +89,6 @@ pub struct PullRequestReview {
     pub author_association: AuthorAssociation,
 
     /// All links related to this pull request.
-    #[serde(rename = "_links")]
-    pub links: Links,
+    #[serde(rename = "_links", borrow)]
+    pub links: Links<'a>,
 }

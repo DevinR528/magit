@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use matrix_sdk::UInt;
 use serde::Deserialize;
@@ -17,32 +17,37 @@ pub enum CommitCommentAction {
 
 /// The payload of a commit comment.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CommitCommentEvent {
+pub struct CommitCommentEvent<'a> {
     /// The action that was performed.
     pub action: CommitCommentAction,
 
     /// The checks to run.
-    pub comment: CommitComment,
+    #[serde(borrow)]
+    pub comment: CommitComment<'a>,
 
     /// Information about the repositories this app has access to.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Information about Github app installation.
     ///
     /// This is only present if the event is sent from said app.
-    pub installation: Option<Installation>,
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the user of the app.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 /// The payload of a check run event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CommitComment {
+pub struct CommitComment<'a> {
     /// The api url of the pull request.
     pub url: Url,
 
@@ -53,10 +58,11 @@ pub struct CommitComment {
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The user who commented on this commit.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
     /// The line index in the diff to which this applies.
     pub position: Option<UInt>,
@@ -67,10 +73,10 @@ pub struct CommitComment {
     pub line: Option<UInt>,
 
     /// The relative file path.
-    pub path: Option<PathBuf>,
+    pub path: Option<&'a Path>,
 
     /// The SHA of this commit.
-    pub commit_id: String,
+    pub commit_id: &'a str,
 
     /// Time in UTC this commit was created.
     pub created_at: Dt,
@@ -82,5 +88,5 @@ pub struct CommitComment {
     pub author_association: AuthorAssociation,
 
     /// The body of the message.
-    pub body: String,
+    pub body: &'a str,
 }

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use matrix_sdk::UInt;
 use serde::Deserialize;
@@ -144,21 +144,22 @@ pub struct AccessPermissions {
 
 /// Information about the installed app.
 #[derive(Clone, Debug, Deserialize)]
-pub struct App {
+pub struct App<'a> {
     /// Numeric Id of this team.
     pub id: UInt,
 
     /// String identifier of the team.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this team.
-    pub name: String,
+    pub name: &'a str,
 
     /// The slug of this team.
-    pub slug: Option<String>,
+    pub slug: Option<&'a str>,
 
     /// The owner of this app.
-    pub owner: User,
+    #[serde(borrow)]
+    pub owner: User<'a>,
 
     /// The public web page url.
     pub html_url: Url,
@@ -167,7 +168,7 @@ pub struct App {
     pub external_url: Url,
 
     /// Description of the repo.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// Permissions required for this team.
     pub permissions: AccessPermissions,
@@ -184,141 +185,160 @@ pub struct App {
 
 /// The base branch of a commit.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Base {
+pub struct Base<'a> {
     /// A name for this base `username:branch`.
-    pub label: String,
+    pub label: &'a str,
 
     /// The name of the branch.
     #[serde(rename = "ref")]
-    pub ref_field: String,
+    pub ref_field: &'a str,
 
     /// The SHA of this commit on a branch.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// The user who's base branch this is from.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
     /// The repository the branch is from.
-    pub repo: Option<Repo>,
+    pub repo: Option<Repo<'a>>,
 }
 
 /// Information about a branch.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Branch {
+pub struct Branch<'a> {
     /// The name of this branch.
-    pub name: String,
+    pub name: &'a str,
 
     /// The last commit to this branch.
-    pub commit: CommitTree,
+    #[serde(borrow)]
+    pub commit: CommitTree<'a>,
 
     /// Is this branch protected.
     pub protected: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Changes {}
+pub struct Changes<'a> {
+    /// The changes made to the comment.
+    #[serde(borrow)]
+    body: Option<Body<'a>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Body<'a> {
+    /// The previous version of the body.
+    pub from: &'a str,
+}
 
 /// Information about a specific commit.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Commit {
+pub struct Commit<'a> {
     /// The sha of this commit.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// The identifier of this commit.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// Information about this commit.
-    pub commit: CommitInner,
+    #[serde(borrow)]
+    pub commit: CommitInner<'a>,
 
     /// The api url of the commit referenced.
-    pub url: String,
+    pub url: &'a str,
 
     /// The url to github webpage associated with this commit.
     pub html_url: Url,
 
     /// The api url to request information about comments.
-    pub comments_url: String,
+    pub comments_url: &'a str,
 
     /// The author of this commit.
-    pub author: User,
+    #[serde(borrow)]
+    pub author: User<'a>,
 
     /// The user who committed the referenced commit.
-    pub committer: User,
+    #[serde(borrow)]
+    pub committer: User<'a>,
 
     /// A list of parents of this commit if any.
-    pub parents: Vec<String>,
+    pub parents: Vec<&'a str>,
 }
 
 /// Further information about a commit.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CommitInner {
+pub struct CommitInner<'a> {
     /// The url to this commit.
     pub url: Url,
 
     /// Information about author of this commit.
-    pub author: ShortUser,
+    #[serde(borrow)]
+    pub author: ShortUser<'a>,
 
     /// Information about committer.
-    pub committer: ShortUser,
+    #[serde(borrow)]
+    pub committer: ShortUser<'a>,
 
     /// The commit message.
-    pub message: String,
+    pub message: &'a str,
 
     /// SHA and url of the commit.
-    pub tree: CommitTree,
+    #[serde(borrow)]
+    pub tree: CommitTree<'a>,
 
     /// Number of comments associated with this commit.
     pub comment_count: UInt,
 
     /// Information about the verification of this commit.
-    pub verification: Verification,
+    #[serde(borrow)]
+    pub verification: Verification<'a>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct CommitTree {
+pub struct CommitTree<'a> {
     /// SHA of the commit.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// The url of this commit.
     pub url: Url,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Head {
+pub struct Head<'a> {
     /// A name for this base `username:branch`.
-    pub label: Option<String>,
+    pub label: Option<&'a str>,
 
     /// The name of the branch.
     #[serde(rename = "ref")]
-    pub ref_field: String,
+    pub ref_field: &'a str,
 
     /// The SHA of this commit on a branch.
-    pub sha: String,
+    pub sha: &'a str,
 
     /// The user who's base branch this is from.
-    pub user: Option<User>,
+    pub user: Option<User<'a>>,
 
     /// The repository the branch is from.
-    pub repo: Option<Repo>,
+    pub repo: Option<Repo<'a>>,
 }
 
 /// Information any labels.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Label {
+pub struct Label<'a> {
     /// Numeric Id of this label.
     pub id: UInt,
 
     /// String identifier of the label.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this label.
-    pub name: String,
+    pub name: &'a str,
 
     /// The short description of this label.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// Background color of the label box.
-    pub color: String,
+    pub color: &'a str,
 
     /// Is this a default label.
     pub default: bool,
@@ -326,43 +346,44 @@ pub struct Label {
 
 /// The links related to an issue or pull request.
 #[derive(Clone, Debug)]
-pub struct Links {
-    pub self_link: Option<String>,
-    pub html_link: Option<String>,
-    pub issue_link: Option<String>,
-    pub comments_link: Option<String>,
-    pub review_comments_link: Option<String>,
-    pub review_comment_link: Option<String>,
-    pub commits_link: Option<String>,
-    pub statuses_link: Option<String>,
-    pub pull_request_link: Option<String>,
+pub struct Links<'a> {
+    pub self_link: Option<&'a str>,
+    pub html_link: Option<&'a str>,
+    pub issue_link: Option<&'a str>,
+    pub comments_link: Option<&'a str>,
+    pub review_comments_link: Option<&'a str>,
+    pub review_comment_link: Option<&'a str>,
+    pub commits_link: Option<&'a str>,
+    pub statuses_link: Option<&'a str>,
+    pub pull_request_link: Option<&'a str>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Milestone {
+pub struct Milestone<'a> {
     /// Numeric Id of this milestone.
     pub id: UInt,
 
     /// String identifier of the milestone.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this milestone.
-    pub name: Option<String>,
+    pub name: Option<&'a str>,
 
     /// Information about the creator of this milestone.
-    pub creator: User,
+    #[serde(borrow)]
+    pub creator: User<'a>,
 
     /// The public web page url.
     pub html_url: Url,
 
     /// The url to the github api of this repo.
-    pub url: String,
+    pub url: &'a str,
 
     /// The url to the github api labels requests.
-    pub labels_url: String,
+    pub labels_url: &'a str,
 
     /// Description of the repo.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The number this milestone is.
     pub number: UInt,
@@ -372,7 +393,7 @@ pub struct Milestone {
     pub state: IssueState,
 
     /// The title of this milestone.
-    pub title: String,
+    pub title: &'a str,
 
     /// The number of open issues related to this milestone.
     #[serde(default)]
@@ -397,16 +418,16 @@ pub struct Milestone {
 
 /// Information about a github organization.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Org {
+pub struct Org<'a> {
     /// The name of the organization.
-    pub login: String,
+    pub login: &'a str,
 
     /// Numeric identifier of the organization.
     #[serde(default)]
     pub id: UInt,
 
     /// String identifier of the organization.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The url to the organizations github api.
     pub url: Url,
@@ -416,25 +437,25 @@ pub struct Org {
 
     /// A description of the organization.
     #[serde(default)]
-    pub description: String,
+    pub description: &'a str,
 
     /// The name of the organization.
-    pub name: String,
+    pub name: &'a str,
 
     /// The name of the company associated with this organization.
-    pub company: Option<String>,
+    pub company: Option<&'a str>,
 
     /// Url to a blog associated with this organization.
-    pub blog: Option<String>,
+    pub blog: Option<&'a str>,
 
     /// The location of this organization.
-    pub location: Option<String>,
+    pub location: Option<&'a str>,
 
     /// An email address for this organization.
-    pub email: Option<String>,
+    pub email: Option<&'a str>,
 
     /// The twitter user associated with this organization.
-    pub twitter_username: Option<String>,
+    pub twitter_username: Option<&'a str>,
 
     /// Is this organization verified.
     pub is_verified: bool,
@@ -499,10 +520,10 @@ pub struct Org {
     pub collaborators: UInt,
 
     /// The email of the person who pays.
-    pub billing_email: Option<String>,
+    pub billing_email: Option<&'a str>,
 
     /// The plan this organization is using.
-    pub plan: Option<Plan>,
+    pub plan: Option<Plan<'a>>,
 
     /// The default permissions of a repository.
     #[serde(default, deserialize_with = "default_null")]
@@ -558,9 +579,9 @@ pub struct Permissions {
 
 /// Information about a user/organizations plan.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Plan {
+pub struct Plan<'a> {
     /// The name of this plan.
-    pub name: String,
+    pub name: &'a str,
 
     /// How much space does the organization have.
     #[serde(default)]
@@ -581,18 +602,18 @@ pub struct Plan {
 
 /// Information about a repository.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Repo {
+pub struct Repo<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this repository.
-    pub name: String,
+    pub name: &'a str,
 
     /// The name including owner ie. `owner/repo-name`.
-    pub full_name: String,
+    pub full_name: &'a str,
 
     /// The visibility of this repo.
     #[serde(default)]
@@ -603,16 +624,17 @@ pub struct Repo {
     pub fork: bool,
 
     /// Information about the owner of this repository.
-    pub owner: User,
+    #[serde(borrow)]
+    pub owner: User<'a>,
 
     /// The public web page url.
     pub html_url: Url,
 
     /// The url to the github api of this repo.
-    pub url: String,
+    pub url: &'a str,
 
     /// Description of the repo.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The time in UTC when the repo was created.
     pub created_at: Dt,
@@ -624,10 +646,10 @@ pub struct Repo {
     pub pushed_at: Option<Dt>,
 
     /// The url used when doing git operations.
-    pub git_url: Option<String>,
+    pub git_url: Option<&'a str>,
 
     /// The url used when doing ssh operations.
-    pub ssh_url: Option<String>,
+    pub ssh_url: Option<&'a str>,
 
     /// The url used to clone this repo.
     pub clone_url: Option<Url>,
@@ -636,7 +658,7 @@ pub struct Repo {
     pub svn_url: Option<Url>,
 
     /// The homepage of this repo, if set.
-    pub homepage: Option<String>,
+    pub homepage: Option<&'a str>,
 
     /// Size of the repository.
     #[serde(default)]
@@ -651,7 +673,7 @@ pub struct Repo {
     pub watchers_count: UInt,
 
     /// The programming language used for this repo.
-    pub language: Option<String>,
+    pub language: Option<&'a str>,
 
     /// Does this repo allow issues.
     #[serde(default)]
@@ -678,7 +700,7 @@ pub struct Repo {
     pub forks_count: UInt,
 
     /// The url to the repository this repo mirrors.
-    pub mirror_url: Option<String>,
+    pub mirror_url: Option<&'a str>,
 
     /// Has this repo been archived.
     #[serde(default)]
@@ -693,7 +715,7 @@ pub struct Repo {
     pub open_issues_count: UInt,
 
     /// License of this repo.
-    pub license: Option<String>,
+    pub license: Option<&'a str>,
 
     /// Number of forks for the repo.
     #[serde(default)]
@@ -708,7 +730,7 @@ pub struct Repo {
     pub watchers: UInt,
 
     /// This repositories default branch.
-    pub default_branch: Option<String>,
+    pub default_branch: Option<&'a str>,
 
     /// Allow squash and merge in web merge.
     #[serde(default = "crate::api::common::true_fn")]
@@ -728,7 +750,7 @@ pub struct Repo {
 
     /// The topics this repo covers.
     #[serde(default)]
-    pub topics: Vec<String>,
+    pub topics: Vec<&'a str>,
 
     /// The set permissions of this repo.
     #[serde(default)]
@@ -740,48 +762,48 @@ pub struct Repo {
 
 /// Simple information about a "user".
 #[derive(Clone, Debug, Deserialize)]
-pub struct ShortUser {
+pub struct ShortUser<'a> {
     /// Name of the user.
-    pub name: String,
+    pub name: &'a str,
 
     /// Email of the user.
-    pub email: String,
+    pub email: &'a str,
 
     /// The date of the event this user is related to happened.
     pub date: Dt,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Team {
+pub struct Team<'a> {
     /// Numeric Id of this team.
     pub id: UInt,
 
     /// String identifier of the team.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The name of this team.
-    pub name: String,
+    pub name: &'a str,
 
     /// The slug of this team.
-    pub slug: String,
+    pub slug: &'a str,
 
     /// The public web page url.
     pub html_url: Url,
 
     /// The url to the github api of this repo.
-    pub url: String,
+    pub url: &'a str,
 
     /// Description of the repo.
-    pub description: Option<String>,
+    pub description: Option<&'a str>,
 
     /// The privacy this team is.
-    pub privacy: String,
+    pub privacy: &'a str,
 
     /// Permissions required for this team.
     pub permissions: RepoPermission,
 
     /// The title of this team.
-    pub title: String,
+    pub title: &'a str,
 
     /// The number of members on this team.
     #[serde(default)]
@@ -794,10 +816,10 @@ pub struct Team {
     pub updated_at: Option<Dt>,
 
     /// The time in UTC when the team was closed.
-    pub organization: Option<Org>,
+    pub organization: Option<Org<'a>>,
 
     /// The time in UTC when the team is due.
-    pub parent: Option<Box<Team>>,
+    pub parent: Option<Box<Team<'a>>>,
 
     /// A map of all the github api urls.
     #[serde(flatten, default)]
@@ -809,26 +831,26 @@ pub struct Team {
 /// This can be used for identifying an organization, owner, or
 /// sender.
 #[derive(Clone, Debug, Deserialize)]
-pub struct User {
+pub struct User<'a> {
     /// The name of the user.
-    pub login: String,
+    pub login: &'a str,
 
     /// The numeric identifier of this user.
     pub id: UInt,
 
     /// String identifier of the user.
-    pub node_id: String,
+    pub node_id: &'a str,
 
     /// The users avatar url.
     pub avatar_url: Url,
 
-    pub gravatar_id: String,
+    pub gravatar_id: &'a str,
 
     /// Url to the github api for this user.
-    pub url: String,
+    pub url: &'a str,
 
     /// Url to the github webpage of this user.
-    pub html_url: String,
+    pub html_url: &'a str,
 
     /// The type of user.
     #[serde(rename = "type")]
@@ -844,25 +866,27 @@ pub struct User {
 
 /// Information about the verification of an object.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Verification {
+pub struct Verification<'a> {
     /// Has this object been verified.
     pub verified: bool,
 
     /// Reason given about verification.
     ///
     /// "valid" on success, may give an error on failure.
-    pub reason: String,
+    pub reason: &'a str,
 
     /// The PGP signature of this commit.
-    pub signature: Option<String>,
+    #[serde(borrow)]
+    pub signature: Option<Cow<'a, str>>,
 
     /// The payload of this commit.
     ///
     /// Often source control specific information.
-    pub payload: Option<String>,
+    #[serde(borrow)]
+    pub payload: Option<Cow<'a, str>>,
 }
 
-impl<'de> Deserialize<'de> for Links {
+impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
     fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -884,16 +908,21 @@ impl<'de> Deserialize<'de> for Links {
             PullRequest,
         }
 
-        struct LinksVisitor;
-        impl<'a> Visitor<'a> for LinksVisitor {
-            type Value = Links;
+        #[derive(Deserialize)]
+        struct Href<'a> {
+            href: Option<&'a str>,
+        }
+
+        struct LinksVisitor<'a>(std::marker::PhantomData<&'a ()>);
+        impl<'de: 'a, 'a> Visitor<'de> for LinksVisitor<'a> {
+            type Value = Links<'a>;
 
             // TODO: finish list
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("one of User, Owner, TODO")
             }
 
-            fn visit_map<A: MapAccess<'a>>(
+            fn visit_map<A: MapAccess<'de>>(
                 self,
                 mut map: A,
             ) -> Result<Self::Value, A::Error> {
@@ -908,33 +937,31 @@ impl<'de> Deserialize<'de> for Links {
                 let mut pull_request_link = None;
                 // While there are entries remaining in the input, add them
                 // into our map.
-                while let Some((key, value)) =
-                    map.next_entry::<Field, serde_json::Value>()?
-                {
+                while let Some((key, value)) = map.next_entry::<Field, Href<'a>>()? {
                     match key {
                         Field::Self_ => {
                             if self_link.is_some() {
                                 return Err(Error::duplicate_field("self_link"));
                             }
-                            self_link = value["href"].as_str().map(|s| s.to_owned());
+                            self_link = value.href;
                         }
                         Field::Html => {
                             if html_link.is_some() {
                                 return Err(Error::duplicate_field("html_link"));
                             }
-                            html_link = value["href"].as_str().map(|s| s.to_owned());
+                            html_link = value.href;
                         }
                         Field::Issue => {
                             if issue_link.is_some() {
                                 return Err(Error::duplicate_field("issue_link"));
                             }
-                            issue_link = value["href"].as_str().map(|s| s.to_owned());
+                            issue_link = value.href;
                         }
                         Field::Comments => {
                             if comments_link.is_some() {
                                 return Err(Error::duplicate_field("comments_link"));
                             }
-                            comments_link = value["href"].as_str().map(|s| s.to_owned());
+                            comments_link = value.href;
                         }
                         Field::ReviewComments => {
                             if review_comments_link.is_some() {
@@ -942,8 +969,7 @@ impl<'de> Deserialize<'de> for Links {
                                     "review_comments_link",
                                 ));
                             }
-                            review_comments_link =
-                                value["href"].as_str().map(|s| s.to_owned());
+                            review_comments_link = value.href;
                         }
                         Field::ReviewComment => {
                             if review_comment_link.is_some() {
@@ -951,27 +977,25 @@ impl<'de> Deserialize<'de> for Links {
                                     "review_comment_link",
                                 ));
                             }
-                            review_comment_link =
-                                value["href"].as_str().map(|s| s.to_owned());
+                            review_comment_link = value.href;
                         }
                         Field::Commits => {
                             if commits_link.is_some() {
                                 return Err(Error::duplicate_field("commits_link"));
                             }
-                            commits_link = value["href"].as_str().map(|s| s.to_owned());
+                            commits_link = value.href;
                         }
                         Field::Statuses => {
                             if statuses_link.is_some() {
                                 return Err(Error::duplicate_field("statuses_link"));
                             }
-                            statuses_link = value["href"].as_str().map(|s| s.to_owned());
+                            statuses_link = value.href;
                         }
                         Field::PullRequest => {
                             if pull_request_link.is_some() {
                                 return Err(Error::duplicate_field("pull_request_link"));
                             }
-                            pull_request_link =
-                                value["href"].as_str().map(|s| s.to_owned());
+                            pull_request_link = value.href;
                         }
                     }
                 }
@@ -1000,6 +1024,6 @@ impl<'de> Deserialize<'de> for Links {
             "statuses_link",
             "pull_request_link",
         ];
-        d.deserialize_struct("Links", FIELDS, LinksVisitor)
+        d.deserialize_struct("Links", FIELDS, LinksVisitor(std::marker::PhantomData))
     }
 }
