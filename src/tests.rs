@@ -6,13 +6,13 @@ use tokio::sync::mpsc::channel;
 
 use crate::{
     app,
-    response::{bytes_to_hex, CONTENT_LEN, STARS_EVENT, X_GITHUB_EVENT, X_HUB_SIGNATURE},
+    from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
 };
 
 fn make_signature(body: &str) -> String {
     use hmac::{Mac, NewMac};
 
-    let secret = std::env::var("GITHUB_WEBHOOK_SECRET").unwrap();
+    let secret = std::env::var("__GITHUB_WEBHOOK_SECRET").unwrap();
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())
         .expect("failed to create Hmac digest");
 
@@ -36,7 +36,7 @@ async fn stars() {
         .post("/")
         .header(ContentType::JSON)
         .header(Header::new(CONTENT_LEN, json.len().to_string()))
-        .header(Header::new(X_GITHUB_EVENT, STARS_EVENT))
+        .header(Header::new(X_GITHUB_EVENT, "star"))
         .header(Header::new(X_HUB_SIGNATURE, format!("sha256={}", make_signature(json))))
         .body(json)
         .dispatch()

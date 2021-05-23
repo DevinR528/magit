@@ -1,30 +1,22 @@
 use hmac::{Hmac, Mac, NewMac};
 use rocket::{
-    data, data::FromData, http::Status, outcome::Outcome, request::Request, Data,
+    data,
+    data::FromData,
+    http::{ContentType, Status},
+    outcome::Outcome,
+    request::Request,
+    Data,
 };
 use sha2::Sha256;
+use tokio::io::AsyncReadExt;
 
-use crate::api::GitHubEvent;
+use crate::api::{common::EventKind, GitHubEvent};
 
 // TODO: accept: 'application/vnd.github.v3+json'
 pub const X_GITHUB_EVENT: &str = "x-github-event";
 pub const X_HUB_SIGNATURE: &str = "x-hub-signature-256";
 pub const CONTENT_LEN: &str = "content-length";
-
-pub const CHECK_SUITE_EVENT: &str = "check_suite";
-pub const CHECK_RUN_EVENT: &str = "check_run";
-pub const COMMIT_COMMENT_EVENT: &str = "commit_comment";
-pub const CREATE_EVENT: &str = "create";
-pub const INSTALLATION_EVENT: &str = "installation";
-pub const ISSUE_EVENT: &str = "issue";
-pub const ISSUE_COMMENT_EVENT: &str = "issue_comment";
-pub const PULL_REQUEST_EVENT: &str = "pull_request";
-pub const PULL_REQUEST_REVIEW_EVENT: &str = "pull_request_review";
-pub const PULL_REQUEST_REVIEW_COMMENT_EVENT: &str = "pull_request_review_comment";
-pub const PUSH_EVENT: &str = "push_review";
-pub const RELEASE_EVENT: &str = "release";
-pub const STARS_EVENT: &str = "star";
-pub const STATUS_EVENT: &str = "status";
+pub const CONTENT_TYPE: &str = "content-type";
 
 #[rocket::async_trait]
 impl<'r> FromData<'r> for GitHubEvent<'r> {
@@ -36,6 +28,13 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
     ) -> data::Outcome<GitHubEvent<'r>, Self::Error> {
         let keys = request.headers().get(X_HUB_SIGNATURE).collect::<Vec<_>>();
         let content_len = request.headers().get(CONTENT_LEN).collect::<Vec<_>>();
+        let content_type = request.headers().get(CONTENT_TYPE).collect::<Vec<_>>();
+        if content_type.len() != 1 {
+            return Outcome::Failure((
+                Status::BadRequest,
+                "Multiple content length headers".to_owned(),
+            ));
+        }
         if content_len.len() != 1 {
             return Outcome::Failure((
                 Status::BadRequest,
@@ -59,23 +58,15 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
             ));
         };
 
-        let string = match data.open(content_len).into_string().await {
-            Ok(string) if string.is_complete() => string.into_inner(),
-            Ok(_) => {
-                return Outcome::Failure((
-                    Status::PayloadTooLarge,
-                    "Content length was wrong".to_owned(),
-                ));
-            }
-            Err(e) => {
-                return Outcome::Failure((Status::InternalServerError, e.to_string()));
-            }
-        };
+        let mut string = String::new();
+        if data.open(content_len).read_to_string(&mut string).await.is_err() {
+            return Outcome::Failure((
+                Status::InternalServerError,
+                "Content too large".to_owned(),
+            ));
+        }
 
-        // We store `string` in request-local cache for long-lived borrows.
-        let body = rocket::request::local_cache!(request, string);
-
-        let secret = match std::env::var("GITHUB_WEBHOOK_SECRET") {
+        let secret = match std::env::var("__GITHUB_WEBHOOK_SECRET") {
             Ok(s) => s,
             Err(_) => {
                 return Outcome::Failure((
@@ -85,7 +76,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
             }
         };
 
-        if !validate(secret.as_str(), signature, body) {
+        if !validate(secret.as_str(), signature, &string) {
             return Outcome::Failure((
                 Status::BadRequest,
                 "Validation failed".to_owned(),
@@ -94,99 +85,133 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
 
         let keys = request.headers().get(X_GITHUB_EVENT).collect::<Vec<_>>();
         if keys.len() != 1 {
-            return Outcome::Failure((Status::BadRequest, "".to_owned()));
+            return Outcome::Failure((
+                Status::BadRequest,
+                "No payload type specified in header".to_owned(),
+            ));
         }
 
-        Outcome::Success(match keys[0] {
-            CHECK_SUITE_EVENT => GitHubEvent::CheckSuite(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            CHECK_RUN_EVENT => GitHubEvent::CheckRun(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            COMMIT_COMMENT_EVENT => GitHubEvent::CommitComment(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            CREATE_EVENT => GitHubEvent::Create(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            INSTALLATION_EVENT => {
-                GitHubEvent::Installation(
-                    match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                        Ok(ev) => ev,
-                        Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                    },
-                )
-            }
-            ISSUE_EVENT => GitHubEvent::Issue(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            ISSUE_COMMENT_EVENT => {
-                GitHubEvent::IssueComment(
-                    match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                        Ok(ev) => ev,
-                        Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                    },
-                )
-            }
-            PULL_REQUEST_EVENT => GitHubEvent::PullRequest(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            PULL_REQUEST_REVIEW_EVENT => GitHubEvent::PullRequestReview(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            PULL_REQUEST_REVIEW_COMMENT_EVENT => GitHubEvent::PullRequestReviewComment(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            PUSH_EVENT => GitHubEvent::Push(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            RELEASE_EVENT => GitHubEvent::Release(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            STARS_EVENT => GitHubEvent::Star(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
-            STATUS_EVENT => GitHubEvent::Status(
-                match serde_json::from_str(body).map_err(|e| e.to_string()) {
-                    Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
-                },
-            ),
+        let decoded = if Ok(ContentType::Form) == content_type[0].parse() {
+            // Form data has a "payload=..." prefix so remove it
+            rocket::http::uri::Uri::percent_decode_lossy(&string[8..]).to_string()
+        } else {
+            string
+        };
 
+        // We store `string` in request-local cache for long-lived borrows.
+        let body = rocket::request::local_cache!(request, decoded);
+
+        Outcome::Success(match keys[0].into() {
+            EventKind::CheckSuite => {
+                GitHubEvent::CheckSuite(
+                    match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                        Ok(ev) => ev,
+                        Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                    },
+                )
+            }
+            EventKind::CheckRun => GitHubEvent::CheckRun(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::CommitComment => GitHubEvent::CommitComment(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Create => GitHubEvent::Create(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Delete => GitHubEvent::Delete(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Installation => GitHubEvent::Installation(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Issues => GitHubEvent::Issue(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::IssueComment => GitHubEvent::IssueComment(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Milestone => GitHubEvent::Milestone(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Ping => GitHubEvent::Ping(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::PullRequest => GitHubEvent::PullRequest(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::PullRequestReview => GitHubEvent::PullRequestReview(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::PullRequestReviewComment => GitHubEvent::PullRequestReviewComment(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Push => GitHubEvent::Push(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Release => GitHubEvent::Release(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Star => GitHubEvent::Star(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Star => GitHubEvent::Status(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
+            EventKind::Watch => GitHubEvent::Watch(
+                match serde_json::from_str(body).map_err(|e| e.to_string()) {
+                    Ok(ev) => ev,
+                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                },
+            ),
             ev => {
                 return Outcome::Failure((
                     Status::BadRequest,
