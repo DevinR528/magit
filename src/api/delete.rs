@@ -1,24 +1,24 @@
 use serde::Deserialize;
 
-use crate::api::common::{Installation, Org, Repo, User};
-
-/// The action that was performed.
-///
-/// Currently can only be started.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum WatchAction {
-    /// A new watcher was added.
-    Started,
-}
+use crate::api::{
+    common::{Installation, Org, Repo, User},
+    create::RefType,
+};
 
 /// The payload of a delete event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct WatchEvent<'a> {
+pub struct DeleteEvent<'a> {
     /// The action that was performed.
-    pub action: WatchAction,
+    #[serde(rename = "ref")]
+    pub ref_: &'a str,
 
-    /// Information about the repository being watched.
+    /// The type of git object deleted in the repository.
+    pub ref_type: RefType,
+
+    /// The pusher type for the event.
+    pub pusher_type: &'a str,
+
+    /// Information about the repositories this app has access to.
     #[serde(borrow)]
     pub repository: Repo<'a>,
 
@@ -33,7 +33,7 @@ pub struct WatchEvent<'a> {
     #[serde(borrow)]
     pub installation: Option<Installation<'a>>,
 
-    /// Detailed information about the user that triggered the event.
+    /// Detailed information about the user of the app.
     #[serde(borrow)]
     pub sender: User<'a>,
 }

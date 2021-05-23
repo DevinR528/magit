@@ -4,9 +4,8 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{datetime, AuthorAssociation, Dt, Org, Repo, User},
-    installation::Installation,
+use crate::api::common::{
+    datetime, AuthorAssociation, Dt, Installation, Org, Repo, User,
 };
 
 #[derive(Clone, Debug, Deserialize)]

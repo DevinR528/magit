@@ -1,36 +1,40 @@
 use serde::Deserialize;
 
-use crate::api::common::{Installation, Org, Repo, User};
+use crate::api::common::{Changes, Installation, Milestone, Org, Repo, User};
 
-/// The type of git object created.
+/// The action that was performed on the milestone.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum RefType {
-    /// A tag git object was created.
-    Tag,
+pub enum MilestoneAction {
+    /// A new milestone was added.
+    Created,
 
-    /// A branch git object was created.
-    Branch,
+    /// The milestone was closed.
+    Closed,
+
+    /// The milestone was opened.
+    Opened,
+
+    /// The milestone was edited.
+    Edited,
+
+    /// The milestone was deleted.
+    Deleted,
 }
 
-/// The payload of a create event.
+/// The payload of a delete event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct CreateEvent<'a> {
+pub struct MilestoneEvent<'a> {
     /// The action that was performed.
-    #[serde(rename = "ref")]
-    pub ref_: &'a str,
+    pub action: MilestoneAction,
 
-    /// The type of git object created in the repository.
-    pub ref_type: RefType,
-
-    /// The name of the repositories master branch.
-    pub master_branch: &'a str,
-
-    /// The repositories current description.
-    pub description: Option<&'a str>,
+    /// The type of git object deleted in the repository.
+    #[serde(borrow)]
+    pub milestone: Milestone<'a>,
 
     /// The pusher type for the event.
-    pub pusher_type: &'a str,
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]

@@ -2,9 +2,8 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{datetime_opt, default_null, Changes, Dt, Org, Repo, UrlMap, User},
-    installation::Installation,
+use crate::api::common::{
+    datetime_opt, default_null, Changes, Dt, Installation, Org, Repo, UrlMap, User,
 };
 
 /// The specific actions that a release event has.

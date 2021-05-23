@@ -6,8 +6,9 @@ use crate::api::{
     check_suite::{
         CheckAction, CheckPullRequest, CheckStatus, CheckSuite, ConclusionStatus,
     },
-    common::{datetime, datetime_opt, default_null, App, Dt, Org, Repo, User},
-    installation::Installation,
+    common::{
+        datetime, datetime_opt, default_null, App, Dt, Installation, Org, Repo, User,
+    },
 };
 
 /// The payload of a check run event.

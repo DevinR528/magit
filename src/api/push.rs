@@ -1,9 +1,6 @@
 use serde::Deserialize;
 
-use crate::api::{
-    common::{Commit, Committer, Org, Repo, User},
-    installation::Installation,
-};
+use crate::api::common::{Committer, Installation, Org, Repo, User};
 
 /// The payload of a push event.
 #[derive(Clone, Debug, Deserialize)]
@@ -39,13 +36,13 @@ pub struct PushEvent<'a> {
 
     /// Information about the commits that were pushed.
     #[serde(default, borrow)]
-    pub commits: Vec<Commit<'a>>,
+    pub commits: Vec<PushCommit<'a>>,
 
     /// Information about the commits that were pushed.
     #[serde(borrow)]
-    pub head_commit: Option<Commit<'a>>,
+    pub head_commit: Option<PushCommit<'a>>,
 
-    /// Detailed information about the repository that was stared.
+    /// Detailed information about the repository that was pushed to.
     #[serde(borrow)]
     pub repository: Repo<'a>,
 
@@ -55,12 +52,52 @@ pub struct PushEvent<'a> {
     #[serde(borrow)]
     pub installation: Option<Installation<'a>>,
 
-    /// Detailed information about the organization the repo that was stared
+    /// Detailed information about the organization the repository that was pushed to
     /// belongs to.
     #[serde(borrow)]
     pub organization: Option<Org<'a>>,
 
-    /// Detailed information about the user who stared the repo.
+    /// Detailed information about the user who pushed to the repository.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+/// Information about a specific commit.
+#[derive(Clone, Debug, Deserialize)]
+pub struct PushCommit<'a> {
+    /// The sha of this commit.
+    pub id: &'a str,
+
+    /// The identifier of this commit.
+    pub tree_id: &'a str,
+
+    /// Is this commit distinct from others.
+    pub distinct: bool,
+
+    /// The commit message.
+    #[serde(borrow)]
+    pub message: &'a str,
+
+    /// The api url of the commit referenced.
+    pub url: &'a str,
+
+    /// The author of this commit.
+    #[serde(borrow)]
+    pub author: Committer<'a>,
+
+    /// The user who committed the referenced commit.
+    #[serde(borrow)]
+    pub committer: Committer<'a>,
+
+    /// The files that were added.
+    #[serde(default)]
+    pub added: Vec<&'a str>,
+
+    /// The files that were removed.
+    #[serde(default)]
+    pub removed: Vec<&'a str>,
+
+    /// The files that were modified.
+    #[serde(default)]
+    pub modified: Vec<&'a str>,
 }

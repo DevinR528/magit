@@ -1,9 +1,6 @@
 use serde::Deserialize;
 
-use crate::api::{
-    common::{Dt, Org, Repo, User},
-    installation::Installation,
-};
+use crate::api::common::{Dt, Installation, Org, Repo, User};
 
 /// The specific actions that a star event has.
 #[derive(Clone, Debug, Deserialize)]
