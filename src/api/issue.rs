@@ -2,12 +2,9 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{
-        datetime, datetime_opt, AuthorAssociation, Changes, Dt, IssueState, Label,
-        LockReason, Milestone, Org, Repo, User,
-    },
-    installation::Installation,
+use crate::api::common::{
+    datetime, datetime_opt, AuthorAssociation, Changes, Dt, Installation, IssueState,
+    Label, LockReason, Milestone, Org, Repo, User,
 };
 
 /// The actions that can be taken for an issue event.

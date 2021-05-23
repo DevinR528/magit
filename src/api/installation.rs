@@ -1,10 +1,7 @@
 use matrix_sdk::UInt;
 use serde::Deserialize;
-use url::Url;
 
-use crate::api::common::{
-    datetime, AccessPermissions, Dt, EventKind, Org, RepoSelection, Type, UrlMap, User,
-};
+use crate::api::common::{Installation, Org, User};
 
 /// The actions that can be taken in an installation event.
 #[derive(Clone, Debug, Deserialize)]
@@ -50,52 +47,6 @@ pub struct InstallationEvent<'a> {
 
     /// Detailed information about the requester of the app.
     pub requester: Option<User<'a>>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Installation<'a> {
-    /// Numeric Id of this installation.
-    pub id: UInt,
-
-    /// Detailed information about the user who installed the app.
-    #[serde(borrow)]
-    pub account: User<'a>,
-
-    /// Whether all repositories are selected or only a few.
-    pub repository_selection: RepoSelection,
-
-    /// The public web page url.
-    pub html_url: Url,
-
-    /// Numeric identifier of the installed app.
-    pub app_id: UInt,
-
-    /// Numeric identifier for the app target.
-    pub target_id: UInt,
-
-    /// The type this app targets.
-    pub target_type: Type,
-
-    /// The permissions the app is given for each section.
-    pub permissions: AccessPermissions,
-
-    /// Events this app has access to.
-    pub events: Vec<EventKind>,
-
-    /// Time in UTC this app was created.
-    #[serde(deserialize_with = "datetime")]
-    pub created_at: Dt,
-
-    /// Time in UTC this app was last updated.
-    #[serde(deserialize_with = "datetime")]
-    pub updated_at: Dt,
-
-    /// The configuration file for this installed app.
-    pub single_file_name: &'a str,
-
-    /// A map of all the github api urls.
-    #[serde(flatten, default)]
-    pub all_urls: UrlMap,
 }
 
 /// Information about repositories that the installation can access.

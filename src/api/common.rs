@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::BTreeMap, fmt};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 
 mod enums;
@@ -12,8 +12,8 @@ pub use enums::{
 };
 pub use structs::{
     AccessPermissions, App, Base, Branch, Changes, Commit, CommitInner, CommitTree,
-    Committer, Head, Label, Links, Milestone, Org, Permissions, Plan, Repo, ShortUser,
-    Team, User, Verification,
+    Committer, Head, Installation, Label, Links, Milestone, Org, Permissions, Plan, Repo,
+    ShortUser, Team, User, Verification,
 };
 
 pub type Dt = DateTime<Utc>;
@@ -42,7 +42,7 @@ impl<'de> Deserialize<'de> for UrlMap {
             type Value = UrlMap;
 
             // TODO: finish list
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("one of User, Owner, TODO")
             }
 
@@ -95,9 +95,9 @@ where
     let ts = StringOrUInt::deserialize(deser)?;
     match ts {
         StringOrUInt::UInt(timestamp) => Ok(Dt::from_utc(
-            chrono::NaiveDateTime::from_timestamp_opt(timestamp, 0)
+            NaiveDateTime::from_timestamp_opt(timestamp, 0)
                 .ok_or_else(|| D::Error::custom("timestamp exceeded bounds"))?,
-            chrono::Utc,
+            Utc,
         )),
         StringOrUInt::String(datetime) => datetime.parse().map_err(D::Error::custom),
     }
@@ -112,9 +112,9 @@ where
     let ts = StringOrUInt::deserialize(deser);
     Ok(Some(match ts {
         Ok(StringOrUInt::UInt(timestamp)) => Dt::from_utc(
-            chrono::NaiveDateTime::from_timestamp_opt(timestamp, 0)
+            NaiveDateTime::from_timestamp_opt(timestamp, 0)
                 .ok_or_else(|| D::Error::custom("timestamp exceeded bounds"))?,
-            chrono::Utc,
+            Utc,
         ),
         Ok(StringOrUInt::String(datetime)) => {
             datetime.parse().map_err(D::Error::custom)?

@@ -2,9 +2,8 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{datetime, default_null, App, Committer, Dt, Org, Repo, User},
-    installation::Installation,
+use crate::api::common::{
+    datetime, default_null, App, Committer, Dt, Installation, Org, Repo, User,
 };
 
 /// The actions that can be taken in a check event.

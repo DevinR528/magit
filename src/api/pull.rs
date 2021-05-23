@@ -2,12 +2,9 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{
-        datetime_opt, default_null, AuthorAssociation, Base, Changes, Dt, Head,
-        IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
-    },
-    installation::Installation,
+use crate::api::common::{
+    datetime_opt, default_null, AuthorAssociation, Base, Changes, Dt, Head, Installation,
+    IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
 };
 
 /// The actions that can be taken for a pull request.

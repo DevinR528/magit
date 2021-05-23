@@ -6,7 +6,9 @@ use url::Url;
 
 use crate::api::common::{
     datetime, datetime_opt, default_null,
-    enums::{EventKind, IssueState, RepoCreationType, RepoPermission, Type},
+    enums::{
+        EventKind, IssueState, RepoCreationType, RepoPermission, RepoSelection, Type,
+    },
     Dt, UrlMap,
 };
 
@@ -193,7 +195,7 @@ pub struct Base<'a> {
 
     /// The name of the branch.
     #[serde(rename = "ref")]
-    pub ref_field: &'a str,
+    pub ref_: &'a str,
 
     /// The SHA of this commit on a branch.
     pub sha: &'a str,
@@ -226,18 +228,32 @@ pub struct Changes<'a> {
     ///
     /// The is present for issues, pulls, and comments.
     #[serde(borrow)]
-    body: Option<Body<'a>>,
+    pub body: Option<Body<'a>>,
 
     /// The changes made to the title.
     #[serde(borrow)]
-    title: Option<Body<'a>>,
+    pub title: Option<Body<'a>>,
 
     /// The changes made to the name.
     ///
-    /// This is present for releases, there may be other uses of it also Github's API
+    /// This is present for releases, there may be other uses of it also, Github's API
     /// docs are so-so.
     #[serde(borrow)]
-    name: Option<Body<'a>>,
+    pub name: Option<Body<'a>>,
+
+    /// The changes made to the due_on attribute.
+    ///
+    /// This is present for milestones, there may be other uses of it also, Github's API
+    /// docs are so-so.
+    #[serde(borrow)]
+    pub due_on: Option<Body<'a>>,
+
+    /// The changes made to the description.
+    ///
+    /// This is present for milestones, there may be other uses of it also, Github's API
+    /// docs are so-so.
+    #[serde(borrow)]
+    pub description: Option<Body<'a>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -270,14 +286,27 @@ pub struct Commit<'a> {
 
     /// The author of this commit.
     #[serde(borrow)]
-    pub author: User<'a>,
+    pub author: Committer<'a>,
 
     /// The user who committed the referenced commit.
     #[serde(borrow)]
-    pub committer: User<'a>,
+    pub committer: Committer<'a>,
 
     /// A list of parents of this commit if any.
+    #[serde(default)]
     pub parents: Vec<&'a str>,
+
+    /// The files that were added.
+    #[serde(default)]
+    pub added: Vec<&'a str>,
+
+    /// The files that were removed.
+    #[serde(default)]
+    pub removed: Vec<&'a str>,
+
+    /// The files that were modified.
+    #[serde(default)]
+    pub modified: Vec<&'a str>,
 }
 
 /// Further information about a commit.
@@ -313,7 +342,7 @@ pub struct CommitInner<'a> {
 #[derive(Clone, Debug, Deserialize)]
 pub struct Committer<'a> {
     /// The git author's name.
-    pub name: &'a str,
+    pub name: Option<&'a str>,
 
     /// The git author's email.
     pub email: Option<&'a str>,
@@ -342,7 +371,7 @@ pub struct Head<'a> {
 
     /// The name of the branch.
     #[serde(rename = "ref")]
-    pub ref_field: &'a str,
+    pub ref_: &'a str,
 
     /// The SHA of this commit on a branch.
     pub sha: &'a str,
@@ -352,6 +381,52 @@ pub struct Head<'a> {
 
     /// The repository the branch is from.
     pub repo: Option<Repo<'a>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Installation<'a> {
+    /// Numeric Id of this installation.
+    pub id: UInt,
+
+    /// Detailed information about the user who installed the app.
+    #[serde(borrow)]
+    pub account: User<'a>,
+
+    /// Whether all repositories are selected or only a few.
+    pub repository_selection: RepoSelection,
+
+    /// The public web page url.
+    pub html_url: Url,
+
+    /// Numeric identifier of the installed app.
+    pub app_id: UInt,
+
+    /// Numeric identifier for the app target.
+    pub target_id: UInt,
+
+    /// The type this app targets.
+    pub target_type: Type,
+
+    /// The permissions the app is given for each section.
+    pub permissions: AccessPermissions,
+
+    /// Events this app has access to.
+    pub events: Vec<EventKind>,
+
+    /// Time in UTC this app was created.
+    #[serde(deserialize_with = "datetime")]
+    pub created_at: Dt,
+
+    /// Time in UTC this app was last updated.
+    #[serde(deserialize_with = "datetime")]
+    pub updated_at: Dt,
+
+    /// The configuration file for this installed app.
+    pub single_file_name: &'a str,
+
+    /// A map of all the github api urls.
+    #[serde(flatten, default)]
+    pub all_urls: UrlMap,
 }
 
 /// Information any labels.
@@ -966,7 +1041,7 @@ impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
             type Value = Links<'a>;
 
             // TODO: finish list
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("one of User, Owner, TODO")
             }
 

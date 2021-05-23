@@ -1,5 +1,6 @@
 use std::fmt;
 
+use ruma::serde::StringEnum;
 use serde::Deserialize;
 
 #[derive(Clone, Debug)]
@@ -21,7 +22,7 @@ impl<'de> Deserialize<'de> for Type {
             type Value = &'a str;
 
             // TODO: finish list
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("one of User, Organization")
             }
 
@@ -75,7 +76,7 @@ impl<'de> Deserialize<'de> for LockReason {
             type Value = &'a str;
 
             // TODO: finish list
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("one of User, Organization")
             }
 
@@ -158,8 +159,8 @@ impl Default for IssueState {
 
 /// An enum representing all the different payload event types within the Github webhooks
 /// API.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Debug, StringEnum)]
+#[ruma_enum(rename_all = "snake_case")]
 pub enum EventKind {
     CheckRun,
     CheckSuite,
@@ -176,6 +177,7 @@ pub enum EventKind {
     DiscussionComment,
     Fork,
     Gollum,
+    Installation,
     Issues,
     IssueComment,
     Label,
@@ -185,6 +187,7 @@ pub enum EventKind {
     Organization,
     OrgBlock,
     PageBuild,
+    Ping,
     Project,
     ProjectCard,
     ProjectColumn,
@@ -205,6 +208,8 @@ pub enum EventKind {
     Watch,
     WorkflowDispatch,
     WorkflowRun,
+    #[doc(hidden)]
+    _Custom(String),
 }
 
 #[derive(Clone, Debug, Deserialize)]

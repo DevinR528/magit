@@ -2,10 +2,7 @@ use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{
-    common::{Branch, Commit, Org, Repo, User},
-    installation::Installation,
-};
+use crate::api::common::{Branch, Commit, Installation, Org, Repo, User};
 
 /// The state of the status event.
 #[derive(Clone, Debug, Deserialize)]

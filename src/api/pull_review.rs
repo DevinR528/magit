@@ -3,8 +3,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    common::{AuthorAssociation, Changes, Dt, Links, Org, Repo, User},
-    installation::Installation,
+    common::{AuthorAssociation, Changes, Dt, Installation, Links, Org, Repo, User},
     pull::PullRequest,
 };
 
