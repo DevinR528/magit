@@ -58,7 +58,7 @@ impl<'a, F: AsRef<str>, T: Display + ?Sized + 'a, I: IntoIterator<Item = &'a T> 
 impl<'a, F: AsRef<str>, T: Display + ?Sized + 'a, I: IntoIterator<Item = &'a T> + Copy>
     Display for Arguments<'a, F, T, I>
 {
-    fn fmt(&self, std_fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, std_fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         #[derive(Debug, Eq, PartialEq)]
         enum State {
             Piece,
@@ -129,7 +129,7 @@ impl<'a, F: AsRef<str>, T: Display + ?Sized + 'a, I: IntoIterator<Item = &'a T> 
 
 fn fmt_iter<'a>(
     iter: impl Iterator<Item = char> + 'a,
-    fmt: &mut fmt::Formatter,
+    fmt: &mut fmt::Formatter<'_>,
 ) -> fmt::Result {
     for item in iter {
         item.fmt(fmt)?
