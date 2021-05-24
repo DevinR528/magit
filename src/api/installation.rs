@@ -1,4 +1,4 @@
-use matrix_sdk::UInt;
+use ruma::UInt;
 use serde::Deserialize;
 
 use crate::api::common::{Installation, Org, User};

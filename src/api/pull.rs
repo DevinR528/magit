@@ -1,5 +1,4 @@
-use matrix_sdk::UInt;
-use ruma::serde::StringEnum;
+use ruma::{serde::StringEnum, UInt};
 use serde::Deserialize;
 use url::Url;
 

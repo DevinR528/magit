@@ -12,6 +12,7 @@ use serde::Deserialize;
 use tokio::sync::mpsc::Sender;
 
 pub mod api;
+pub mod cmds;
 pub mod from_data;
 pub mod routes;
 pub mod strfmt;

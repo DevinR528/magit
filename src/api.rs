@@ -131,7 +131,7 @@ impl<'a> GitHubEvent<'a> {
 mod test {
     use std::path::Path;
 
-    use matrix_sdk::uint;
+    use ruma::uint;
 
     use crate::api::{
         check_run::{CheckRun, CheckRunEvent, Deployment, Output},

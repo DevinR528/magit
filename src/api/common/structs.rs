@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt};
 
-use matrix_sdk::UInt;
+use ruma::UInt;
 use serde::Deserialize;
 use url::Url;
 

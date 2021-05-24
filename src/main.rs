@@ -1,19 +1,31 @@
 use magit::app;
-use matrix_sdk::{
-    self, async_trait,
+use ruma::{
+    api::{
+        client::{
+            r0::{
+                message::send_message_event::Request as MessageRequest,
+                sync::sync_events::Request as SyncRequest,
+            },
+            Error as ApiError,
+        },
+        error::MatrixError,
+        SendAccessToken,
+    },
+    client::{
+        http_client::Isahc, Client, Error as ClientError, HttpClient, HttpClientExt,
+    },
     events::{
         room::message::{MessageEventContent, MessageType, TextMessageEventContent},
-        AnyMessageEventContent, SyncMessageEvent,
+        AnyMessageEventContent, AnySyncMessageEvent, AnySyncRoomEvent, SyncMessageEvent,
     },
-    room::Room,
-    Client, ClientConfig, EventHandler, SyncSettings,
+    presence::PresenceState,
+    uint, RoomId,
 };
 use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
     task,
     time::{sleep, Duration},
 };
-use url::Url;
 
 /// Used to increase the sleep duration between checking for github webhook messages.
 const BACKOFF: usize = 20;
@@ -30,29 +42,53 @@ impl CommandBot {
     }
 }
 
-#[async_trait]
-impl EventHandler for CommandBot {
-    async fn on_room_message(
-        &self,
-        room: Room,
-        event: &SyncMessageEvent<MessageEventContent>,
-    ) {
-        if let Room::Joined(room) = room {
-            let msg_body = if let SyncMessageEvent {
-                content:
-                    MessageEventContent {
-                        msgtype:
-                            MessageType::Text(TextMessageEventContent {
-                                body: msg_body, ..
-                            }),
-                        ..
-                    },
-                ..
-            } = event
+async fn on_room_message<C: HttpClientExt>(
+    client: C,
+    mut since: String,
+    room_id: &RoomId,
+) -> Result<(), ClientError<C::Error, ApiError>> {
+    loop {
+        let response = client
+            .send_matrix_request(
+                "",
+                SendAccessToken::IfRequired(""),
+                assign::assign!(SyncRequest::new(), {
+                    filter: None,
+                    since: Some(&since),
+                    set_presence: &PresenceState::Online,
+                    timeout: Some(Duration::from_millis(500)),
+                }),
+            )
+            .await?;
+
+        since = response.next_batch.clone();
+
+        for event in response
+            .rooms
+            .join
+            .get(room_id)
+            .into_iter()
+            .flat_map(|room| &room.timeline.events)
+            .filter_map(|ev| ev.deserialize().ok())
+        {
+            let msg_body = if let AnySyncRoomEvent::Message(
+                AnySyncMessageEvent::RoomMessage(SyncMessageEvent {
+                    content:
+                        MessageEventContent {
+                            msgtype:
+                                MessageType::Text(TextMessageEventContent {
+                                    body: msg_body,
+                                    ..
+                                }),
+                            ..
+                        },
+                    ..
+                }),
+            ) = event
             {
                 msg_body
             } else {
-                return;
+                continue;
             };
 
             if msg_body.contains("!party") {
@@ -64,12 +100,19 @@ impl EventHandler for CommandBot {
 
                 // send our message to the room we found the "!party" command in
                 // the last parameter is an optional Uuid which we don't care about.
-                room.send(content, None).await.unwrap();
+                client
+                    .send_matrix_request(
+                        "",
+                        SendAccessToken::IfRequired(""),
+                        MessageRequest::new(room_id, "", &content),
+                    )
+                    .await?;
 
                 println!("message sent");
             }
         }
     }
+    Ok(())
 }
 
 #[allow(unused)]
@@ -79,29 +122,13 @@ async fn login_and_sync(
     password: String,
     listener: Receiver<String>,
     sender: Sender<String>,
-) -> Result<Client, matrix_sdk::Error> {
-    // the location for `JsonStore` to save files to
-    let mut home = dirs::home_dir().expect("no home directory found");
-    home.push("github_bot");
+) -> Result<Client<Isahc>, ClientError<isahc::Error, ApiError>> {
+    let client =
+        Client::with_http_client(Isahc::new().unwrap(), homeserver_url.to_owned(), None);
 
-    let client_config = ClientConfig::new().store_path(home);
-
-    let homeserver_url =
-        Url::parse(homeserver_url).expect("Couldn't parse the homeserver URL");
-    // create a new Client with the given homeserver url and config
-    let client = Client::new_with_config(homeserver_url, client_config).unwrap();
-
-    client.login(&username, &password, None, Some("github bot")).await?;
+    client.log_in(&username, &password, None, Some("github bot")).await?;
 
     println!("logged in as {}", username);
-
-    // An initial sync to set up state and so our bot doesn't respond to old
-    // messages. If the `StateStore` finds saved state in the location given the
-    // initial sync will be skipped in favor of loading state from the store
-    client.sync_once(SyncSettings::default()).await.unwrap();
-    // add our CommandBot to be notified of incoming messages, we do this after the
-    // initial sync to avoid responding to messages before the bot was running.
-    client.set_event_handler(Box::new(CommandBot::new(listener, sender))).await;
 
     Ok(client)
 }
