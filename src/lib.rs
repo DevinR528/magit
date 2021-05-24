@@ -15,13 +15,13 @@ pub mod api;
 pub mod from_data;
 pub mod routes;
 pub mod strfmt;
-#[cfg(test)]
-mod tests;
+
+use api::common::EventKind;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubConfig {
     repos: Vec<String>,
-    events: Vec<String>,
+    events: Vec<EventKind>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

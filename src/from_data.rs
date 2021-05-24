@@ -93,7 +93,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
 
         let decoded = if Ok(ContentType::Form) == content_type[0].parse() {
             // Form data has a "payload=..." prefix so remove it
-            rocket::http::uri::Uri::percent_decode_lossy(&string[8..]).to_string()
+            rocket::http::RawStr::new(&string[8..]).percent_decode_lossy().to_string()
         } else {
             string
         };
@@ -222,7 +222,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
     }
 }
 
-fn validate<B: AsRef<[u8]>>(secret: B, signature: B, message: B) -> bool {
+pub fn validate<B: AsRef<[u8]>>(secret: B, signature: B, message: B) -> bool {
     let signature = &signature.as_ref()[7..];
 
     let mut hmac = Hmac::<Sha256>::new_from_slice(secret.as_ref())

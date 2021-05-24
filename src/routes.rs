@@ -51,7 +51,7 @@ pub async fn index<'o: 'r, 'r>(
     to_matrix: &State<Store>,
 ) -> ResponseResult<Status> {
     let store: &Store = to_matrix;
-    if !store.config.github.events.contains(&event.as_kind().to_string()) {
+    if !store.config.github.events.contains(&event.as_kind()) {
         return Ok(Status::NoContent);
     }
     match event {
@@ -74,7 +74,9 @@ pub async fn index<'o: 'r, 'r>(
         GitHubEvent::PullRequestReviewComment(_) => {}
         GitHubEvent::Push(push) => handle_push(push, store).await?,
         GitHubEvent::Release(_) => {}
-        GitHubEvent::Star(_) => {}
+        GitHubEvent::Star(star) => {
+            store.to_matrix.send(star.sender.login.to_string()).await?
+        }
         GitHubEvent::Status(_) => {}
         GitHubEvent::Watch(_) => {}
     };
@@ -106,7 +108,10 @@ async fn handle_pull_request(
     let base = pull.pull_request.base.ref_;
     let additions = pull.pull_request.additions;
     let deletions = pull.pull_request.deletions;
+    let changed_files = pull.pull_request.changed_files;
     let commits = pull.pull_request.commits;
+    let mergable = pull.pull_request.mergeable;
+    let rebaseable = pull.pull_request.rebaseable;
     let pull_url = pull.pull_request.html_url;
 
     let action = match pull.action {
@@ -116,50 +121,65 @@ async fn handle_pull_request(
                 .assignee
                 .map(|a| a.login.to_string())
                 .unwrap_or_else(|| "<unknown>".to_owned());
-            format!("'s PR was assigned to {}", assignee)
+            format!("the PR was assigned to {}", assignee)
         }
         PullRequestAction::AutoMergeDisabled => {
-            format!("'s PR was AutoMergeDisabled")
+            format!("this PR's auto merge was disabled")
         }
         PullRequestAction::AutoMergeEnabled => {
-            format!("'s PR was AutoMergeEnabled")
+            format!("this PR's auto merge was enabled")
         }
         PullRequestAction::Closed => {
             if pull.pull_request.merged.unwrap_or_default() {
-                format!("'s PR was merged!!")
+                format!("the PR was merged")
             } else {
-                format!("'s PR was closed without merging :(")
+                format!("the PR was closed without merging")
             }
         }
         PullRequestAction::ConvertToDraft => {
-            format!("'s PR was converted to a draft")
+            format!("the PR was converted to a draft")
         }
-        PullRequestAction::Edited => format!("'s PR was Edited"),
-        PullRequestAction::Labeled => format!("'s PR was Labeled"),
-        PullRequestAction::Locked => format!("'s PR was Locked"),
-        PullRequestAction::Opened => format!("'s PR was Opened"),
-        PullRequestAction::ReadyForReview => format!("'s PR was Unassigned"),
-        PullRequestAction::Reopened => format!("'s PR was Reopened"),
+        PullRequestAction::Edited => format!("the PR has been edited"),
+        PullRequestAction::Labeled => format!("the PR has been labeled"),
+        PullRequestAction::Locked => format!("the PR has been locked"),
+        PullRequestAction::Opened => format!("the PR has been opened"),
+        PullRequestAction::ReadyForReview => format!("the PR is ready for review"),
+        PullRequestAction::Reopened => format!("the PR has been reopened"),
         PullRequestAction::ReviewRequestedRemoved => {
-            format!("'s PR was ReviewRequestedRemoved")
+            format!("requested review for this PR has been removed")
         }
         PullRequestAction::ReviewRequested => {
-            format!("'s PR was ReviewRequested")
+            format!("review has been requested")
         }
-        PullRequestAction::Synchronize => format!("'s PR was Unassigned"),
-        PullRequestAction::Unassigned => format!("'s PR was Unassigned"),
-        PullRequestAction::Unlabeled => format!("'s PR was Unlabeled"),
-        PullRequestAction::Unlocked => format!("'s PR was Unlocked"),
+        PullRequestAction::Synchronize => format!("the PR was synchronized"),
+        PullRequestAction::Unassigned => format!("the PR was unassigned"),
+        PullRequestAction::Unlabeled => format!("the PR was unlabeled"),
+        PullRequestAction::Unlocked => format!("the PR was unlocked"),
+        _ => "<unknown>".to_owned(),
     };
 
     store
         .to_matrix
         .send(format!(
-            "[{}] {}{}\n[Check out the pull request!]({})",
+            r#"[{}] {}'s PR has new activity: {}
+[Check out the pull request!]({})
+{} was opened against {}, has {} commits
+++ {}
+-- {}
+{} changed files
+is able to merge {}, can be rebased {}"#,
             repo_name,
             username,
             action,
-            pull_url.as_str()
+            pull_url.as_str(),
+            current,
+            base,
+            commits,
+            additions,
+            deletions,
+            changed_files,
+            mergable.unwrap_or_default(),
+            rebaseable.unwrap_or_default(),
         ))
         .await
         .map_err(|e| e.into())

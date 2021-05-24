@@ -33,10 +33,11 @@ features = ["default"]
 
 [dependencies.rocket]
 git = "https://github.com/SergioBenitez/Rocket"
+rev = "bf9de1d39e0b33c0172f89f98a43e266e9ae5bd7"
 
 [dependencies.ruma]
 version = "0.1.0"
-features = ["client-reqwest", "client-api-c"]
+features = ["client-api-c"]
 
 [dependencies.tokio]
 version = "1.6.0"

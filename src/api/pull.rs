@@ -1,4 +1,5 @@
 use matrix_sdk::UInt;
+use ruma::serde::StringEnum;
 use serde::Deserialize;
 use url::Url;
 
@@ -8,8 +9,8 @@ use crate::api::common::{
 };
 
 /// The actions that can be taken for a pull request.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Debug, StringEnum)]
+#[ruma_enum(rename_all = "snake_case")]
 pub enum PullRequestAction {
     /// Reviewer assigned.
     Assigned,
@@ -63,6 +64,9 @@ pub enum PullRequestAction {
 
     /// Pull request has been unlocked.
     Unlocked,
+
+    #[doc(hidden)]
+    _Custom(String),
 }
 
 /// The payload of a pull request event.

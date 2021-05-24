@@ -159,7 +159,7 @@ impl Default for IssueState {
 
 /// An enum representing all the different payload event types within the Github webhooks
 /// API.
-#[derive(Clone, Debug, StringEnum)]
+#[derive(Clone, Debug, PartialEq, Eq, StringEnum)]
 #[ruma_enum(rename_all = "snake_case")]
 pub enum EventKind {
     CheckRun,

@@ -1,13 +1,12 @@
+use magit::{
+    app,
+    from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
+};
 use rocket::{
     http::{ContentType, Header, Status},
     local::asynchronous::Client,
 };
 use tokio::sync::mpsc::channel;
-
-use crate::{
-    app,
-    from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
-};
 
 fn make_signature(body: &str) -> String {
     use hmac::{Mac, NewMac};
@@ -28,7 +27,7 @@ fn make_signature(body: &str) -> String {
 
 #[tokio::test]
 async fn stars() {
-    let (to_matrix, _from_gh) = channel(1024);
+    let (to_matrix, mut from_gh) = channel(1024);
     let json = include_str!("../test_json/star.json");
 
     let client = Client::tracked(app(to_matrix)).await.expect("valid rocket instance");
@@ -41,5 +40,7 @@ async fn stars() {
         .body(json)
         .dispatch()
         .await;
+
     assert_eq!(response.status(), Status::Ok);
+    assert_eq!("DevinR528", from_gh.recv().await.unwrap());
 }
