@@ -769,6 +769,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4075386626662786ddb0ec9081e7c7eeb1ba31951f447ca780ef9f5d568189"
 
 [[package]]
+name = "github-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1064,9 +1074,11 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "dirs",
+ "github-derive",
  "hmac 0.11.0",
  "matrix-sdk",
  "octocrab",
+ "reqwest",
  "rocket",
  "ruma",
  "serde",

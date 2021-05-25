@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt};
 
+use github_derive::Incoming;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
@@ -13,7 +14,7 @@ use crate::api::common::{
 };
 
 /// Permissions given to the installed app for accessing metadata, contents, and issues.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct AccessPermissions {
     /// Permission for accessing actions.
     #[serde(default, deserialize_with = "default_null")]
@@ -145,7 +146,7 @@ pub struct AccessPermissions {
 }
 
 /// Information about the installed app.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct App<'a> {
     /// Numeric Id of this team.
     pub id: UInt,
@@ -188,7 +189,7 @@ pub struct App<'a> {
 }
 
 /// The base branch of a commit.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Base<'a> {
     /// A name for this base `username:branch`.
     pub label: &'a str,
@@ -209,7 +210,7 @@ pub struct Base<'a> {
 }
 
 /// Information about a branch.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Branch<'a> {
     /// The name of this branch.
     pub name: &'a str,
@@ -222,7 +223,7 @@ pub struct Branch<'a> {
     pub protected: bool,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Changes<'a> {
     /// The changes made to the body.
     ///
@@ -256,14 +257,14 @@ pub struct Changes<'a> {
     pub description: Option<Body<'a>>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Body<'a> {
     /// The previous version of the body.
     pub from: &'a str,
 }
 
 /// Information about a specific commit.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Commit<'a> {
     /// The sha of this commit.
     pub sha: &'a str,
@@ -310,7 +311,7 @@ pub struct Commit<'a> {
 }
 
 /// Further information about a commit.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct CommitInner<'a> {
     /// The url to this commit.
     pub url: Url,
@@ -339,7 +340,7 @@ pub struct CommitInner<'a> {
 }
 
 /// Information about the author/committer.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Committer<'a> {
     /// The git author's name.
     pub name: Option<&'a str>,
@@ -355,7 +356,7 @@ pub struct Committer<'a> {
     pub username: Option<&'a str>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct CommitTree<'a> {
     /// SHA of the commit.
     pub sha: &'a str,
@@ -364,7 +365,7 @@ pub struct CommitTree<'a> {
     pub url: Url,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Head<'a> {
     /// A name for this base `username:branch`.
     pub label: Option<&'a str>,
@@ -383,7 +384,7 @@ pub struct Head<'a> {
     pub repo: Option<Repo<'a>>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Installation<'a> {
     /// Numeric Id of this installation.
     pub id: UInt,
@@ -430,7 +431,7 @@ pub struct Installation<'a> {
 }
 
 /// Information any labels.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Label<'a> {
     /// Numeric Id of this label.
     pub id: UInt,
@@ -452,7 +453,8 @@ pub struct Label<'a> {
 }
 
 /// The links related to an issue or pull request.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Incoming)]
+#[no_deserialize]
 pub struct Links<'a> {
     pub self_link: Option<&'a str>,
     pub html_link: Option<&'a str>,
@@ -465,7 +467,7 @@ pub struct Links<'a> {
     pub pull_request_link: Option<&'a str>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Milestone<'a> {
     /// Numeric Id of this milestone.
     pub id: UInt,
@@ -528,7 +530,7 @@ pub struct Milestone<'a> {
 }
 
 /// Information about a github organization.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Org<'a> {
     /// The name of the organization.
     pub login: &'a str,
@@ -675,23 +677,23 @@ pub struct Org<'a> {
 }
 
 /// The permissions a repository has.
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Incoming)]
 pub struct Permissions {
     /// Administrative privileges.
     #[serde(default)]
-    admin: bool,
+    pub admin: bool,
 
     /// Are pushes enabled.
     #[serde(default)]
-    push: bool,
+    pub push: bool,
 
     /// Is pulling permitted.
     #[serde(default)]
-    pull: bool,
+    pub pull: bool,
 }
 
 /// Information about a user/organizations plan.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Plan<'a> {
     /// The name of this plan.
     pub name: &'a str,
@@ -714,7 +716,7 @@ pub struct Plan<'a> {
 }
 
 /// Information about a repository.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Repo<'a> {
     /// Numeric Id of this repository.
     pub id: UInt,
@@ -882,7 +884,7 @@ pub struct Repo<'a> {
 }
 
 /// Simple information about a "user".
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct ShortUser<'a> {
     /// Name of the user.
     pub name: &'a str,
@@ -894,7 +896,7 @@ pub struct ShortUser<'a> {
     pub date: Dt,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Team<'a> {
     /// Numeric Id of this team.
     pub id: UInt,
@@ -953,7 +955,7 @@ pub struct Team<'a> {
 ///
 /// This can be used for identifying an organization, owner, or
 /// sender.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct User<'a> {
     /// The name of the user.
     pub login: &'a str,
@@ -988,7 +990,7 @@ pub struct User<'a> {
 }
 
 /// Information about the verification of an object.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Incoming)]
 pub struct Verification<'a> {
     /// Has this object been verified.
     pub verified: bool,
@@ -1009,7 +1011,22 @@ pub struct Verification<'a> {
     pub payload: Option<Cow<'a, str>>,
 }
 
-impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
+#[derive(Deserialize)]
+#[serde(field_identifier, rename_all = "snake_case")]
+enum Field {
+    #[serde(rename = "self")]
+    Self_,
+    Html,
+    Issue,
+    Comments,
+    ReviewComments,
+    ReviewComment,
+    Commits,
+    Statuses,
+    PullRequest,
+}
+
+impl<'de> Deserialize<'de> for IncomingLinks {
     fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -1017,19 +1034,106 @@ impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
         use serde::de::{Error, MapAccess, Visitor};
 
         #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "snake_case")]
-        enum Field {
-            #[serde(rename = "self")]
-            Self_,
-            Html,
-            Issue,
-            Comments,
-            ReviewComments,
-            ReviewComment,
-            Commits,
-            Statuses,
-            PullRequest,
+        struct Href {
+            href: Option<String>,
         }
+
+        struct LinksVisitor;
+        impl<'de> Visitor<'de> for LinksVisitor {
+            type Value = IncomingLinks;
+
+            // TODO: finish list
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("one of User, Owner, TODO")
+            }
+
+            fn visit_map<A: MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> Result<Self::Value, A::Error> {
+                let mut self_link = None;
+                let mut html_link = None;
+                let mut issue_link = None;
+                let mut comments_link = None;
+                let mut review_comments_link = None;
+                let mut review_comment_link = None;
+                let mut commits_link = None;
+                let mut statuses_link = None;
+                let mut pull_request_link = None;
+                // While there are entries remaining in the input, add them
+                // into our map.
+                while let Some((key, value)) = map.next_entry::<Field, Href>()? {
+                    match key {
+                        Field::Self_ => {
+                            set_field(&mut self_link, value.href, "self_link")?
+                        }
+                        Field::Html => {
+                            set_field(&mut html_link, value.href, "html_link")?
+                        }
+                        Field::Issue => {
+                            set_field(&mut issue_link, value.href, "issue_link")?
+                        }
+                        Field::Comments => {
+                            set_field(&mut comments_link, value.href, "comments_link")?
+                        }
+                        Field::ReviewComments => set_field(
+                            &mut review_comments_link,
+                            value.href,
+                            "review_comments_link",
+                        )?,
+                        Field::ReviewComment => set_field(
+                            &mut review_comment_link,
+                            value.href,
+                            "review_comment_link",
+                        )?,
+                        Field::Commits => {
+                            set_field(&mut commits_link, value.href, "commits_link")?
+                        }
+                        Field::Statuses => {
+                            set_field(&mut statuses_link, value.href, "statuses_link")?
+                        }
+                        Field::PullRequest => set_field(
+                            &mut pull_request_link,
+                            value.href,
+                            "pull_request_link",
+                        )?,
+                    }
+                }
+
+                Ok(IncomingLinks {
+                    self_link,
+                    html_link,
+                    issue_link,
+                    comments_link,
+                    review_comments_link,
+                    review_comment_link,
+                    commits_link,
+                    statuses_link,
+                    pull_request_link,
+                })
+            }
+        }
+        const FIELDS: &[&str] = &[
+            "self_link",
+            "html_link",
+            "issue_link",
+            "comments_link",
+            "review_comments_link",
+            "review_comment_link",
+            "commits_link",
+            "statuses_link",
+            "pull_request_link",
+        ];
+        d.deserialize_struct("Links", FIELDS, LinksVisitor)
+    }
+}
+
+impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{Error, MapAccess, Visitor};
 
         #[derive(Deserialize)]
         struct Href<'a> {
@@ -1063,63 +1167,38 @@ impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
                 while let Some((key, value)) = map.next_entry::<Field, Href<'a>>()? {
                     match key {
                         Field::Self_ => {
-                            if self_link.is_some() {
-                                return Err(Error::duplicate_field("self_link"));
-                            }
-                            self_link = value.href;
+                            set_field(&mut self_link, value.href, "self_link")?
                         }
                         Field::Html => {
-                            if html_link.is_some() {
-                                return Err(Error::duplicate_field("html_link"));
-                            }
-                            html_link = value.href;
+                            set_field(&mut html_link, value.href, "html_link")?
                         }
                         Field::Issue => {
-                            if issue_link.is_some() {
-                                return Err(Error::duplicate_field("issue_link"));
-                            }
-                            issue_link = value.href;
+                            set_field(&mut issue_link, value.href, "issue_link")?
                         }
                         Field::Comments => {
-                            if comments_link.is_some() {
-                                return Err(Error::duplicate_field("comments_link"));
-                            }
-                            comments_link = value.href;
+                            set_field(&mut comments_link, value.href, "comments_link")?
                         }
-                        Field::ReviewComments => {
-                            if review_comments_link.is_some() {
-                                return Err(Error::duplicate_field(
-                                    "review_comments_link",
-                                ));
-                            }
-                            review_comments_link = value.href;
-                        }
-                        Field::ReviewComment => {
-                            if review_comment_link.is_some() {
-                                return Err(Error::duplicate_field(
-                                    "review_comment_link",
-                                ));
-                            }
-                            review_comment_link = value.href;
-                        }
+                        Field::ReviewComments => set_field(
+                            &mut review_comments_link,
+                            value.href,
+                            "review_comments_link",
+                        )?,
+                        Field::ReviewComment => set_field(
+                            &mut review_comment_link,
+                            value.href,
+                            "review_comment_link",
+                        )?,
                         Field::Commits => {
-                            if commits_link.is_some() {
-                                return Err(Error::duplicate_field("commits_link"));
-                            }
-                            commits_link = value.href;
+                            set_field(&mut commits_link, value.href, "commits_link")?
                         }
                         Field::Statuses => {
-                            if statuses_link.is_some() {
-                                return Err(Error::duplicate_field("statuses_link"));
-                            }
-                            statuses_link = value.href;
+                            set_field(&mut statuses_link, value.href, "statuses_link")?
                         }
-                        Field::PullRequest => {
-                            if pull_request_link.is_some() {
-                                return Err(Error::duplicate_field("pull_request_link"));
-                            }
-                            pull_request_link = value.href;
-                        }
+                        Field::PullRequest => set_field(
+                            &mut pull_request_link,
+                            value.href,
+                            "pull_request_link",
+                        )?,
                     }
                 }
 
@@ -1148,5 +1227,19 @@ impl<'de: 'a, 'a> Deserialize<'de> for Links<'a> {
             "pull_request_link",
         ];
         d.deserialize_struct("Links", FIELDS, LinksVisitor(std::marker::PhantomData))
+    }
+}
+
+fn set_field<T, E: serde::de::Error>(
+    field: &mut Option<T>,
+    value: Option<T>,
+    msg: &'static str,
+) -> Result<(), E> {
+    match field {
+        Some(existing_value) => Err(E::duplicate_field(msg)),
+        None => {
+            *field = value;
+            Ok(())
+        }
     }
 }
