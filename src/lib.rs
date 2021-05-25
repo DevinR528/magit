@@ -11,7 +11,11 @@ use rocket::{
 use serde::Deserialize;
 use tokio::sync::mpsc::Sender;
 
+// Hack so github-derive can use import magit inside of magit.
+extern crate self as magit;
+
 pub mod api;
+pub mod cmds;
 pub mod from_data;
 pub mod routes;
 pub mod strfmt;

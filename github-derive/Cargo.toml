@@ -1,0 +1,18 @@
+[package]
+name = "github-derive"
+version = "0.1.0"
+authors = ["Devin R <devin.ragotzy@gmail.com>"]
+license = "MIT/Apache-2.0"
+description = "Procedural macros for github REST API"
+repository = "https://github.com/DevinR528/magit"
+keywords = ["matrix", "chat", "github", "bot"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-crate = "1.0.0"
+proc-macro2 = "1.0.24"
+quote = "1.0.8"
+syn = { version = "1.0.55", features = ["full"] }
