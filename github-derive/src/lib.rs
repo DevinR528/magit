@@ -1,16 +1,5 @@
-use pm2::Span;
 use proc_macro::TokenStream;
-use proc_macro2 as pm2;
-use quote::{quote, ToTokens};
-use syn::{
-    braced,
-    parse::{Parse, ParseStream},
-    parse_macro_input,
-    punctuated::Punctuated,
-    spanned::Spanned,
-    visit::Visit,
-    Attribute, DeriveInput, Field, Ident, Lifetime, Lit, LitStr, Token, Type,
-};
+use syn::{parse_macro_input, DeriveInput};
 
 mod incoming;
 mod rest_api;

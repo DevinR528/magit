@@ -15,12 +15,11 @@ use tokio::sync::mpsc::Sender;
 extern crate self as magit;
 
 pub mod api;
-pub mod cmds;
 pub mod from_data;
 pub mod routes;
 pub mod strfmt;
 
-use api::common::EventKind;
+use api::EventKind;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubConfig {
