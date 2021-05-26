@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use crate::api::{
     rest::{ApplicationV3Json, Direction, MilestoneQuery, Sort, StateQuery, Type},
-    IncomingIssue,
+    Dt, IncomingIssue,
 };
 
 github_rest_api! {
@@ -41,6 +41,29 @@ github_rest_api! {
         #[github(query)]
         #[serde(serialize_with = "crate::api::rest::opt_default")]
         pub state: Option<StateQuery>,
+
+        /// Filter by the user that created the issue.
+        #[github(query)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub creator: Option<&'a str>,
+
+        /// Filter by a user that is mentioned in the issue.
+        #[github(query)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub mentioned: Option<&'a str>,
+
+        /// Filter by labels.
+        #[github(query)]
+        #[serde(
+            skip_serializing_if = "<[_]>::is_empty",
+            serialize_with = "crate::api::rest::comma_list"
+        )]
+        pub labels: Vec<&'a str>,
+
+        /// The user that created the issue.
+        #[github(query)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub since: Option<Dt>,
 
         /// The order the repositories are returned.
         ///

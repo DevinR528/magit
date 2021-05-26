@@ -102,7 +102,8 @@ impl<'a, F: AsRef<str>, T: Display + ?Sized + 'a, I: IntoIterator<Item = &'a T> 
                         Some(Brace::Left(_)) => return Err(fmt::Error),
                         Some(Brace::Right(_)) => brace.index(),
                         None => {
-                            todo!("{:?} {} {:?}", state, start, brace)
+                            // TODO: this is an error
+                            panic!("{:?} {} {:?}", state, start, brace)
                         }
                     };
 

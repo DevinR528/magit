@@ -4,7 +4,9 @@ use syn::{
     braced,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
-    Attribute, Field, Ident, Lit, LitStr, Token, Type, TypePath,
+    AngleBracketedGenericArguments, Attribute, Field, GenericArgument, Ident, Lit,
+    LitStr, ParenthesizedGenericArguments, PathArguments, Token, Type, TypePath,
+    TypeReference,
 };
 
 pub(crate) fn expand(api: GithubInput) -> syn::Result<TokenStream> {
@@ -37,37 +39,35 @@ fn expand_metadata(meta: &Metadata) -> syn::Result<TokenStream> {
 fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
     let metadata = expand_metadata(meta)?;
 
-    let fields = req
-        .req_fields
-        .iter()
-        .map(|f| {
-            let mut single = 0;
-            let attrs = f
-                .attrs
-                .iter()
-                .filter_map(|attr| {
-                    attr.path.is_ident("github").then(|| {
-                        single += 1;
-                        attr.parse_args::<AttrArg>()
-                    })
+    let mut has_all_lifetimes = false;
+    let mut fields = vec![];
+    for f in &req.req_fields {
+        if check_for_lifetimes(&f.ty)? {
+            has_all_lifetimes = true;
+        }
+        let mut single = 0;
+        let attrs = f
+            .attrs
+            .iter()
+            .filter_map(|attr| {
+                attr.path.is_ident("github").then(|| {
+                    single += 1;
+                    attr.parse_args::<AttrArg>()
                 })
-                .collect::<syn::Result<Vec<_>>>()?;
-            if attrs.len() > 1 {
-                return Err(syn::Error::new_spanned(
-                    f,
-                    "only 1 github attribute allowed",
-                ));
-            }
-
-            Ok(RequestField {
-                attr: attrs.into_iter().next(),
-                name: f.ident.clone().ok_or_else(|| {
-                    syn::Error::new_spanned(f, "only 1 github attribute allowed")
-                })?,
-                ty: f.ty.clone(),
             })
-        })
-        .collect::<syn::Result<Vec<RequestField>>>()?;
+            .collect::<syn::Result<Vec<_>>>()?;
+        if attrs.len() > 1 {
+            return Err(syn::Error::new_spanned(f, "only 1 github attribute allowed"));
+        }
+
+        fields.push(RequestField {
+            attr: attrs.into_iter().next(),
+            name: f.ident.clone().ok_or_else(|| {
+                syn::Error::new_spanned(f, "only 1 github attribute allowed")
+            })?,
+            ty: f.ty.clone(),
+        });
+    }
 
     let mut fmt_string = meta.path.value();
     let mut fmt_args = vec![];
@@ -105,49 +105,16 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
         }
     };
 
-    let mut query_calls =
-        vec![quote! { let query_map = ::std::collections::HashMap::new(); }];
-    for query in fields.iter().filter(|f| matches!(f.attr, Some(AttrArg::Query))) {
-        let query_field: &Ident = &query.name;
-        let name = Ident::new(
-            query_field.to_string().trim_start_matches("r#"),
-            query_field.span(),
-        );
-
-        let q_call = match &query.ty {
-            Type::Path(TypePath { path, .. })
-                if path.segments.first().map_or(false, |seg| seg.ident == "Option") =>
-            {
-                quote! {
-                    if let Some(#name) = self.#query_field.as_ref() {
-                        query_map.insert(stringify!(#name), #name.to_string());
-                    }
-                }
-            }
-            _ => quote! {
-                query_map.insert(stringify!(#name), &self.#query_field.to_string());
-            },
-        };
-        query_calls.push(q_call);
-    }
-    // If there are no query params don't emit anything to avoid putting a type on the
-    // HashMap
-    if query_calls.len() > 1 {
-        query_calls.push(quote! { let request = request.query(&query_map); });
-    } else {
-        query_calls.clear();
-    }
-
     let mut query_field = vec![];
     let mut init_field = vec![];
-    let mut has_lifetime = false;
+    let mut has_query_lifetime = false;
     for (field, orig) in fields
         .iter()
         .zip(req.req_fields.iter())
         .filter(|(f, _)| matches!(f.attr, Some(AttrArg::Query)))
     {
-        if matches!(field.ty, Type::Reference(_)) {
-            has_lifetime = true;
+        if check_for_lifetimes(&field.ty)? {
+            has_query_lifetime = true;
         }
 
         let attr = orig.attrs.iter().filter(|attr| !attr.path.is_ident("github"));
@@ -163,7 +130,7 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
     let query = if query_field.is_empty() {
         TokenStream::new()
     } else {
-        let lifetime = if has_lifetime {
+        let lifetime = if has_query_lifetime {
             quote! { <'a> }
         } else {
             TokenStream::new()
@@ -182,14 +149,14 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
 
     let mut body_field = vec![];
     let mut init_field = vec![];
-    let mut has_lifetime = false;
+    let mut has_body_lifetime = false;
     for (field, orig) in fields
         .iter()
         .zip(req.req_fields.iter())
         .filter(|(f, _)| matches!(f.attr, Some(AttrArg::Body)))
     {
-        if matches!(field.ty, Type::Reference(_)) {
-            has_lifetime = true;
+        if check_for_lifetimes(&field.ty)? {
+            has_body_lifetime = true;
         }
 
         let attr = orig.attrs.iter().filter(|attr| !attr.path.is_ident("github"));
@@ -205,7 +172,7 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
     let body = if body_field.is_empty() {
         TokenStream::new()
     } else {
-        let lifetime = if has_lifetime {
+        let lifetime = if has_body_lifetime {
             quote! { <'a> }
         } else {
             TokenStream::new()
@@ -267,6 +234,11 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
         }
     };
 
+    let lifetime = if has_all_lifetimes {
+        quote! { <'a> }
+    } else {
+        TokenStream::new()
+    };
     let name = fields.iter().map(|f| &f.name);
     let ty = fields.iter().map(|f| &f.ty);
     let attr = req.req_fields.iter().map(|f| {
@@ -275,7 +247,7 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
     });
     Ok(quote! {
         #[derive(Clone, Debug, ::serde::Serialize)]
-        pub struct Request<'a> { #( #attr pub #name: #ty ),* }
+        pub struct Request #lifetime { #( #attr pub #name: #ty ),* }
 
         #to_reqwest
     })
@@ -574,4 +546,60 @@ impl Parse for FieldValue {
 fn parse<T: Parse, U>(input: &ParseStream<'_>, val: fn(T) -> U) -> syn::Result<U> {
     let _: Token![:] = input.parse()?;
     Ok(val(input.parse()?))
+}
+
+fn check_for_lifetimes(field_type: &Type) -> syn::Result<bool> {
+    Ok(match field_type {
+        // T<'a> -> IncomingT
+        // The IncomingT has to be declared by the user of this derive macro.
+        Type::Path(TypePath { path, .. }) => {
+            let mut has_lifetimes = false;
+            let mut is_lifetime_generic = false;
+
+            for seg in &path.segments {
+                // strip generic lifetimes
+                match &seg.arguments {
+                    PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                        args,
+                        ..
+                    }) => {
+                        for ty in args.iter() {
+                            if let GenericArgument::Type(ty) = &ty {
+                                if check_for_lifetimes(ty)? {
+                                    has_lifetimes = true;
+                                };
+                            }
+                            if let GenericArgument::Lifetime(_) = ty {
+                                is_lifetime_generic = true;
+                            }
+                        }
+                    }
+                    PathArguments::Parenthesized(ParenthesizedGenericArguments {
+                        inputs,
+                        ..
+                    }) => {
+                        for ty in inputs.iter() {
+                            if check_for_lifetimes(ty)? {
+                                has_lifetimes = true;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            has_lifetimes || is_lifetime_generic
+        }
+        Type::Reference(TypeReference { .. }) => true,
+        Type::Tuple(syn::TypeTuple { elems, .. }) => {
+            let mut has_lifetime = false;
+            for elem in elems {
+                if check_for_lifetimes(elem)? {
+                    has_lifetime = true;
+                }
+            }
+            has_lifetime
+        }
+        _ => false,
+    })
 }

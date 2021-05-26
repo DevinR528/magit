@@ -150,6 +150,14 @@ impl Serialize for AssigneeQuery {
     }
 }
 
+pub fn comma_list<S, T>(list: &[T], ser: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::ser::Serializer,
+    T: Serialize,
+{
+    list.serialize(ser)
+}
+
 pub fn opt_default<S, T>(opt: &Option<T>, ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::ser::Serializer,
@@ -224,10 +232,12 @@ impl fmt::Display for ApplicationV3Json {
 
 #[cfg(test)]
 mod tests {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
     use super::{issue, repository, Direction, Sort, Type};
     use crate::api::{
         rest::{ApplicationV3Json, MilestoneQuery, StateQuery},
-        GithubClient,
+        Dt, GithubClient,
     };
 
     #[tokio::test]
@@ -285,7 +295,7 @@ mod tests {
     #[ignore = "integration test"]
     async fn create_issue() {
         let cli = GithubClient::new(Some(
-            include_str!("/home/devinr/Documents/github/tkns.txt").trim().to_owned(),
+            include_str!("/home/devin/Desktop/github/tkns.txt").trim().to_owned(),
         ))
         .unwrap();
         let res = cli
@@ -305,10 +315,12 @@ mod tests {
     }
 
     #[tokio::test]
-    // #[ignore = "integration test"]
+    #[ignore = "integration test"]
     async fn list_issues() {
+        use std::convert::TryFrom;
+
         let cli = GithubClient::new(Some(
-            include_str!("/home/devinr/Documents/github/tkns.txt").trim().to_owned(),
+            include_str!("/home/devin/Desktop/github/tkns.txt").trim().to_owned(),
         ))
         .unwrap();
         let res = cli
@@ -316,6 +328,23 @@ mod tests {
                 accept: Some(ApplicationV3Json),
                 owner: "DevinR528",
                 repo: "magit",
+                creator: None,
+                labels: vec!["foo", "bar", "more"],
+                mentioned: None,
+                since: Some(Dt::from_utc(
+                    chrono::NaiveDateTime::from_timestamp_opt(
+                        i64::try_from(
+                            SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_millis(),
+                        )
+                        .unwrap(),
+                        0,
+                    )
+                    .unwrap(),
+                    chrono::Utc,
+                )),
                 sort: None,
                 direction: None,
                 page: None,
