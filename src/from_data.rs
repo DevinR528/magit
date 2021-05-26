@@ -10,7 +10,7 @@ use rocket::{
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
 
-use crate::api::{common::EventKind, GitHubEvent};
+use crate::api::{EventKind, GitHubEvent};
 
 // TODO: accept: 'application/vnd.github.v3+json'
 pub const X_GITHUB_EVENT: &str = "x-github-event";

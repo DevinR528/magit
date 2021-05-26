@@ -8,7 +8,7 @@ use thiserror::Error;
 use tracing::{debug, info, warn};
 
 use crate::{
-    api::{
+    api::webhooks::{
         issue::IssueEvent,
         pull::{PullRequestAction, PullRequestEvent},
         push::PushEvent,
@@ -124,37 +124,33 @@ async fn handle_pull_request(
             format!("the PR was assigned to {}", assignee)
         }
         PullRequestAction::AutoMergeDisabled => {
-            format!("this PR's auto merge was disabled")
+            "this PR's auto merge was disabled".to_owned()
         }
         PullRequestAction::AutoMergeEnabled => {
-            format!("this PR's auto merge was enabled")
+            "this PR's auto merge was enabled".to_owned()
         }
         PullRequestAction::Closed => {
             if pull.pull_request.merged.unwrap_or_default() {
-                format!("the PR was merged")
+                "the PR was merged".to_owned()
             } else {
-                format!("the PR was closed without merging")
+                "the PR was closed without merging".to_owned()
             }
         }
-        PullRequestAction::ConvertToDraft => {
-            format!("the PR was converted to a draft")
-        }
-        PullRequestAction::Edited => format!("the PR has been edited"),
-        PullRequestAction::Labeled => format!("the PR has been labeled"),
-        PullRequestAction::Locked => format!("the PR has been locked"),
-        PullRequestAction::Opened => format!("the PR has been opened"),
-        PullRequestAction::ReadyForReview => format!("the PR is ready for review"),
-        PullRequestAction::Reopened => format!("the PR has been reopened"),
+        PullRequestAction::ConvertToDraft => "the PR was converted to a draft".to_owned(),
+        PullRequestAction::Edited => "the PR has been edited".to_owned(),
+        PullRequestAction::Labeled => "the PR has been labeled".to_owned(),
+        PullRequestAction::Locked => "the PR has been locked".to_owned(),
+        PullRequestAction::Opened => "the PR has been opened".to_owned(),
+        PullRequestAction::ReadyForReview => "the PR is ready for review".to_owned(),
+        PullRequestAction::Reopened => "the PR has been reopened".to_owned(),
         PullRequestAction::ReviewRequestedRemoved => {
-            format!("requested review for this PR has been removed")
+            "requested review for this PR has been removed".to_owned()
         }
-        PullRequestAction::ReviewRequested => {
-            format!("review has been requested")
-        }
-        PullRequestAction::Synchronize => format!("the PR was synchronized"),
-        PullRequestAction::Unassigned => format!("the PR was unassigned"),
-        PullRequestAction::Unlabeled => format!("the PR was unlabeled"),
-        PullRequestAction::Unlocked => format!("the PR was unlocked"),
+        PullRequestAction::ReviewRequested => "review has been requested".to_owned(),
+        PullRequestAction::Synchronize => "the PR was synchronized".to_owned(),
+        PullRequestAction::Unassigned => "the PR was unassigned".to_owned(),
+        PullRequestAction::Unlabeled => "the PR was unlabeled".to_owned(),
+        PullRequestAction::Unlocked => "the PR was unlocked".to_owned(),
         _ => "<unknown>".to_owned(),
     };
 

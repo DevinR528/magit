@@ -1,13 +1,10 @@
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote};
 use syn::{
-    braced,
-    parse::{Parse, ParseStream},
-    parse_quote,
-    punctuated::Punctuated,
-    AngleBracketedGenericArguments, Data, DeriveInput, Field, Fields, GenericArgument,
-    GenericParam, Generics, Meta, ParenthesizedGenericArguments, Path, PathArguments,
-    Type, TypeGenerics, TypePath, TypeReference, TypeSlice, Variant,
+    parse_quote, punctuated::Punctuated, AngleBracketedGenericArguments, Data,
+    DeriveInput, Field, Fields, GenericArgument, GenericParam, Generics, Meta, MetaList,
+    NestedMeta, ParenthesizedGenericArguments, PathArguments, Type, TypeGenerics,
+    TypePath, TypeReference, TypeSlice, Variant,
 };
 
 enum StructKind {
@@ -139,13 +136,14 @@ pub(crate) fn expand(input: DeriveInput) -> syn::Result<TokenStream> {
 }
 
 fn strip_lifetime_attrs(mut f: Field) -> Field {
-    f.attrs.retain(|attr| {
-        attr.path.is_ident("serde")
-            && attr.parse_meta().map_or(
-                false,
-                |meta| matches!(meta, Meta::Path(p) if p.is_ident("borrow")),
-            )
-    });
+    for attr in &mut f.attrs {
+        if attr.path.is_ident("serde") {
+            if let Ok(Meta::List(MetaList { nested, .. })) = attr.parse_meta() {
+                let filtered = nested.into_iter().filter(|meta| !matches!(meta, NestedMeta::Meta(Meta::Path(p)) if p.is_ident("borrow"))).collect::<Vec<NestedMeta>>();
+                *attr = parse_quote! { #[serde(#( #filtered, )*)]}
+            }
+        }
+    }
     f
 }
 
