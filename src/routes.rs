@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use rocket::{
     http::Status,
     post,
@@ -14,7 +16,7 @@ use crate::{
         push::PushEvent,
         GitHubEvent,
     },
-    Store,
+    str_fmt, Store,
 };
 
 pub type ResponseResult<T> = Result<T, ResponseError>;
@@ -106,13 +108,20 @@ async fn handle_pull_request(
     let username = pull.pull_request.user.login;
     let current = pull.pull_request.head.ref_;
     let base = pull.pull_request.base.ref_;
-    let additions = pull.pull_request.additions;
-    let deletions = pull.pull_request.deletions;
-    let changed_files = pull.pull_request.changed_files;
-    let commits = pull.pull_request.commits;
-    let mergable = pull.pull_request.mergeable;
-    let rebaseable = pull.pull_request.rebaseable;
-    let pull_url = pull.pull_request.html_url;
+    let additions = pull.pull_request.additions.to_string();
+    let additions = &additions;
+    let deletions = pull.pull_request.deletions.to_string();
+    let deletions = &deletions;
+    let changed_files = pull.pull_request.changed_files.to_string();
+    let changed_files = &changed_files;
+    let commits = pull.pull_request.commits.to_string();
+    let commits = &commits;
+    let mergable = pull.pull_request.mergeable.unwrap_or_default().to_string();
+    let mergable = &mergable;
+    let rebaseable = pull.pull_request.rebaseable.unwrap_or_default().to_string();
+    let rebaseable = &rebaseable;
+    let pull_url = pull.pull_request.html_url.to_string();
+    let pull_url = &pull_url;
 
     let action = match pull.action {
         PullRequestAction::Assigned => {
@@ -153,32 +162,44 @@ async fn handle_pull_request(
         PullRequestAction::Unlocked => "the PR was unlocked".to_owned(),
         _ => "<unknown>".to_owned(),
     };
+    let action = &action;
 
-    store
-        .to_matrix
-        .send(format!(
-            r#"[{}] {}'s PR has new activity: {}
+    if let Some(fmt_str) = store.config.github.format_strings.get("pull_request") {
+        store
+            .to_matrix
+            .send(str_fmt!(
+                fmt_str, repo_name, username, action, pull_url, current, base, commits,
+                additions, deletions, mergable, rebaseable,
+            ))
+            .await
+            .map_err(|e| e.into())
+    } else {
+        store
+            .to_matrix
+            .send(format!(
+                r#"[{}] {}'s PR has new activity: {}
 [Check out the pull request!]({})
 {} was opened against {}, has {} commits
 ++ {}
 -- {}
 {} changed files
 is able to merge {}, can be rebased {}"#,
-            repo_name,
-            username,
-            action,
-            pull_url.as_str(),
-            current,
-            base,
-            commits,
-            additions,
-            deletions,
-            changed_files,
-            mergable.unwrap_or_default(),
-            rebaseable.unwrap_or_default(),
-        ))
-        .await
-        .map_err(|e| e.into())
+                repo_name,
+                username,
+                action,
+                pull_url,
+                current,
+                base,
+                commits,
+                additions,
+                deletions,
+                changed_files,
+                mergable,
+                rebaseable,
+            ))
+            .await
+            .map_err(|e| e.into())
+    }
 }
 
 async fn handle_push(push: PushEvent<'_>, store: &Store) -> ResponseResult<()> {
