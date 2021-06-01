@@ -1,15 +1,11 @@
-use std::borrow::Cow;
-
 use github_derive::github_rest_api;
-use reqwest::{header::HeaderMap, Method};
-use ruma::{serde::StringEnum, UInt};
-use serde::Serialize;
+use ruma::UInt;
 
 use crate::api::{rest::ApplicationV3Json, IncomingIssue};
 
 github_rest_api! {
     metadata: {
-        description: "",
+        description: "Get information about an issue",
         method: GET,
         path: "/repos/:owner/:repo/issues/:issue_number",
         name: "get_repository",
@@ -17,20 +13,25 @@ github_rest_api! {
     }
 
     request: {
+        /// Optional accept header to enable preview features.
         #[github(header = ACCEPT)]
         pub accept: Option<ApplicationV3Json>,
 
+        /// The owner of this repository.
         #[github(path)]
         pub owner: &'a str,
 
+        /// The name of this repository.
         #[github(path)]
         pub repo: &'a str,
 
+        /// The issue number of the issue to fetch.
         #[github(path)]
         pub issue_number: UInt,
     }
 
     response: {
+        /// The requested issue.
         #[serde(flatten)]
         pub repository: IncomingIssue,
     }

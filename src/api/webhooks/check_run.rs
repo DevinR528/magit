@@ -4,10 +4,8 @@ use url::Url;
 
 use crate::api::{
     datetime, datetime_opt, default_null,
-    webhooks::check_suite::{
-        CheckAction, CheckPullRequest, CheckStatus, CheckSuite, ConclusionStatus,
-    },
-    App, Dt, Installation, Org, Repo, User,
+    webhooks::check_suite::{CheckAction, CheckPullRequest, CheckSuite},
+    App, CheckStatus, ConclusionStatus, Dt, Installation, Org, Repository, User,
 };
 
 /// The payload of a check run event.
@@ -22,7 +20,7 @@ pub struct CheckRunEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.

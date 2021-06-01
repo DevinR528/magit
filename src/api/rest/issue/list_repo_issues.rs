@@ -1,9 +1,5 @@
-use std::borrow::Cow;
-
 use github_derive::github_rest_api;
-use reqwest::{header::HeaderMap, Method};
-use ruma::{serde::StringEnum, uint, UInt};
-use serde::Serialize;
+use ruma::UInt;
 
 use crate::api::{
     rest::{ApplicationV3Json, Direction, MilestoneQuery, Sort, StateQuery, Type},
@@ -12,22 +8,23 @@ use crate::api::{
 
 github_rest_api! {
     metadata: {
-        description: "",
+        description: "List all the issues of a repository",
         method: GET,
         path: "/repos/:owner/:repo/issues",
-        name: "list_org_repositories",
+        name: "list_issues",
         authentication: true,
     }
 
     request: {
+        /// Optional accept header to enable preview features.
         #[github(header = ACCEPT)]
         pub accept: Option<ApplicationV3Json>,
 
-        /// The name of the owner.
+        /// The owner of this repository.
         #[github(path)]
         pub owner: &'a str,
 
-        /// Filter the returned repositories by type.
+        /// The name of the repository.
         #[github(path)]
         pub repo: &'a str,
 
@@ -81,7 +78,7 @@ github_rest_api! {
 
         /// Result per page.
         ///
-        /// Defaults to 1.
+        /// Defaults to 30 and max 100.
         #[github(query)]
         #[serde(serialize_with = "crate::api::rest::per_page")]
         pub per_page: Option<UInt>,
@@ -94,19 +91,18 @@ github_rest_api! {
         pub page: Option<UInt>,
     }
 
-    #[github(with = "::magit::api::rest::issue::list_repo_issues::issues")]
+    #[github(with = ::magit::api::rest::issue::list_repo_issues::issues)]
     response: {
+        /// A list of issues that follow the filter from the request.
         pub issues: Vec<IncomingIssue>,
     }
 }
 
-pub(crate) fn issues<'de, D>(deser: D) -> Result<Response, D::Error>
+pub fn issues<'de, D>(deser: D) -> Result<Response, D::Error>
 where
     D: serde::de::Deserializer<'de>,
 {
-    use serde::Deserialize;
-    let issues = Vec::<IncomingIssue>::deserialize(deser)?;
-    Ok(Response { issues })
+    Ok(Response { issues: serde::Deserialize::deserialize(deser)? })
 }
 
 #[test]

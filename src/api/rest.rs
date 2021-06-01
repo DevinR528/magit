@@ -1,22 +1,24 @@
 use std::fmt;
 
+use github_derive::StringEnum;
 use matrix_sdk::async_trait;
 use reqwest::{
     header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE},
     Client, ClientBuilder, Error as ReqError, Method, RequestBuilder, StatusCode,
 };
-use ruma::{serde::StringEnum, uint, UInt};
+use ruma::{uint, UInt};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub mod action;
+pub mod actions;
 pub mod issue;
+pub mod octocat;
 pub mod pull_request;
 pub mod repository;
 
 /// Specifies the types of repositories you want returned.
 #[derive(Clone, Debug, StringEnum)]
-#[ruma_enum(rename_all = "lowercase")]
+#[github_enum(rename_all = "lowercase")]
 pub enum Type {
     /// Return all repository types the requester has access to.
     All,
@@ -40,9 +42,6 @@ pub enum Type {
     ///
     /// Only supported when a Github app calls this endpoint.
     Internal,
-
-    #[doc(hidden)]
-    _Custom(String),
 }
 
 impl Default for Type {
@@ -51,21 +50,18 @@ impl Default for Type {
 
 /// How the returned repositories are sorted.
 #[derive(Clone, Debug, StringEnum)]
-#[ruma_enum(rename_all = "lowercase")]
+#[github_enum(rename_all = "lowercase")]
 pub enum Direction {
     /// Ascending order, smallest to largest.
     Asc,
 
     /// Descending order, largest to smallest.
     Desc,
-
-    #[doc(hidden)]
-    _Custom(String),
 }
 
 /// How the returned repositories are sorted.
 #[derive(Clone, Debug, StringEnum)]
-#[ruma_enum(rename_all = "snake_case")]
+#[github_enum(rename_all = "snake_case")]
 pub enum Sort {
     /// Return all repository types the requester has access to.
     Created,
@@ -78,14 +74,11 @@ pub enum Sort {
 
     /// Return only repositories that are forks.
     FullName,
-
-    #[doc(hidden)]
-    _Custom(String),
 }
 
 /// Filter issues by state.
 #[derive(Clone, Debug, StringEnum)]
-#[ruma_enum(rename_all = "lowercase")]
+#[github_enum(rename_all = "lowercase")]
 pub enum StateQuery {
     /// Return only open issues.
     Open,
@@ -95,9 +88,6 @@ pub enum StateQuery {
 
     /// Return all issues.
     All,
-
-    #[doc(hidden)]
-    _Custom(String),
 }
 
 impl Default for StateQuery {
@@ -230,11 +220,23 @@ impl fmt::Display for ApplicationV3Json {
     }
 }
 
+/// Enables preview endpoint update_pull_request.
+///
+/// See https://docs.github.com/en/rest/reference/pulls#update-a-pull-request-branch-preview-notices
+#[derive(Clone, Copy, Debug, serde::Serialize)]
+pub struct ApplicationLydian;
+
+impl fmt::Display for ApplicationLydian {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        "application/vnd.github.lydian-preview+json".fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{issue, repository, Direction, Sort, Type};
+    use super::{actions, issue, octocat, repository, Direction, Sort, Type};
     use crate::api::{
         rest::{ApplicationV3Json, MilestoneQuery, StateQuery},
         Dt, GithubClient,
@@ -294,10 +296,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "integration test"]
     async fn create_issue() {
-        let cli = GithubClient::new(Some(
-            include_str!("/home/devin/Desktop/github/tkns.txt").trim().to_owned(),
-        ))
-        .unwrap();
+        let cli = GithubClient::new(Some("token".to_owned())).unwrap();
         let res = cli
             .send_github_request(issue::create_issue::Request {
                 accept: Some(ApplicationV3Json),
@@ -319,10 +318,7 @@ mod tests {
     async fn list_issues() {
         use std::convert::TryFrom;
 
-        let cli = GithubClient::new(Some(
-            include_str!("/home/devin/Desktop/github/tkns.txt").trim().to_owned(),
-        ))
-        .unwrap();
+        let cli = GithubClient::new(Some("token".to_owned())).unwrap();
         let res = cli
             .send_github_request(issue::list_repo_issues::Request {
                 accept: Some(ApplicationV3Json),
@@ -351,6 +347,70 @@ mod tests {
                 per_page: None,
                 milestone: MilestoneQuery::None,
                 state: None,
+            })
+            .await
+            .unwrap();
+        println!("{:?}", res);
+    }
+
+    #[tokio::test]
+    #[ignore = "integration test"]
+    async fn octocat() {
+        let cli = GithubClient::new(None).unwrap();
+        let res = cli
+            .send_github_request(octocat::Request { accept: None, s: "Hello All" })
+            .await
+            .unwrap();
+        println!("{:?}", res);
+    }
+
+    #[tokio::test]
+    #[ignore = "integration test"]
+    async fn download_job_log() {
+        let cli = GithubClient::new(Some("foo".to_owned())).unwrap();
+        let res = cli
+            .send_github_request(actions::download_job_log::Request {
+                accept: None,
+                owner: "DevinR528",
+                repo: "magit",
+                job_id: ruma::uint!(2678750777),
+            })
+            .await
+            .unwrap();
+        println!("{}", res.logs);
+    }
+
+    #[tokio::test]
+    #[ignore = "integration test"]
+    async fn download_run_log() {
+        let cli = GithubClient::new(Some("foo".to_owned())).unwrap();
+        let res = cli
+            .send_github_request(actions::download_run_log::Request {
+                accept: None,
+                owner: "DevinR528",
+                repo: "magit",
+                run_id: ruma::uint!(2678750777),
+            })
+            .await
+            .unwrap();
+        println!("{}", res.logs);
+    }
+
+    #[tokio::test]
+    #[ignore = "integration test"]
+    async fn list_runs() {
+        let cli = GithubClient::new(Some("foo".to_owned())).unwrap();
+        let res = cli
+            .send_github_request(actions::list_runs::Request {
+                accept: None,
+                owner: "DevinR528",
+                repo: "magit",
+                workflow_id: "stable.yml",
+                actor: None,
+                branch: None,
+                event: None,
+                per_page: None,
+                page: None,
             })
             .await
             .unwrap();

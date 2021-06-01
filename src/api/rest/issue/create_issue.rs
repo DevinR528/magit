@@ -1,22 +1,19 @@
-use std::borrow::Cow;
-
 use github_derive::github_rest_api;
-use reqwest::{header::HeaderMap, Method};
-use ruma::{serde::StringEnum, UInt};
-use serde::Serialize;
+use ruma::UInt;
 
 use crate::api::{rest::ApplicationV3Json, IncomingIssue};
 
 github_rest_api! {
     metadata: {
-        description: "",
+        description: "Create a new issue",
         method: POST,
         path: "/repos/:owner/:repo/issues",
-        name: "create_repository",
+        name: "create_issue",
         authentication: true,
     }
 
     request: {
+        /// Optional accept header to enable preview features.
         #[github(header = ACCEPT)]
         pub accept: Option<ApplicationV3Json>,
 
@@ -60,14 +57,15 @@ github_rest_api! {
     }
 
     response: {
+        /// The issue that was just created.
         #[serde(flatten)]
         pub issue: IncomingIssue,
     }
 }
 
 #[test]
-fn get_issue() {
-    let json = include_str!("../../../../test_json/rest/get_issue.json");
+fn create_issue() {
+    let json = include_str!("../../../../test_json/rest/create_issue.json");
 
     let jd = &mut serde_json::Deserializer::from_str(json);
     let repo = serde_path_to_error::deserialize::<_, Response>(jd).unwrap();

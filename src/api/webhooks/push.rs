@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::api::{Committer, Installation, Org, Repo, User};
+use crate::api::{Committer, Installation, Org, Repository, User};
 
 /// The payload of a push event.
 #[derive(Clone, Debug, Deserialize)]
@@ -44,7 +44,7 @@ pub struct PushEvent<'a> {
 
     /// Detailed information about the repository that was pushed to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Information about Github app installation.
     ///

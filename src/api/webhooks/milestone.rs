@@ -1,26 +1,7 @@
+use github_derive::StringEnum;
 use serde::Deserialize;
 
-use crate::api::{Changes, Installation, Milestone, Org, Repo, User};
-
-/// The action that was performed on the milestone.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MilestoneAction {
-    /// A new milestone was added.
-    Created,
-
-    /// The milestone was closed.
-    Closed,
-
-    /// The milestone was opened.
-    Opened,
-
-    /// The milestone was edited.
-    Edited,
-
-    /// The milestone was deleted.
-    Deleted,
-}
+use crate::api::{Changes, Installation, Milestone, Org, Repository, User};
 
 /// The payload of a delete event.
 #[derive(Clone, Debug, Deserialize)]
@@ -38,7 +19,7 @@ pub struct MilestoneEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
@@ -54,4 +35,24 @@ pub struct MilestoneEvent<'a> {
     /// Detailed information about the user of the app.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+/// The action that was performed on the milestone.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
+pub enum MilestoneAction {
+    /// A new milestone was added.
+    Created,
+
+    /// The milestone was closed.
+    Closed,
+
+    /// The milestone was opened.
+    Opened,
+
+    /// The milestone was edited.
+    Edited,
+
+    /// The milestone was deleted.
+    Deleted,
 }

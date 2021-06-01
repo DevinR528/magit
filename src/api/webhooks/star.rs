@@ -1,14 +1,7 @@
+use github_derive::StringEnum;
 use serde::Deserialize;
 
-use crate::api::{Dt, Installation, Org, Repo, User};
-
-/// The specific actions that a star event has.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum StarAction {
-    Created,
-    Deleted,
-}
+use crate::api::{Dt, Installation, Org, Repository, User};
 
 /// The payload of a star event.
 #[derive(Clone, Debug, Deserialize)]
@@ -21,7 +14,7 @@ pub struct StarEvent<'a> {
 
     /// Detailed information about the repository that was stared.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Information about Github app installation.
     ///
@@ -37,4 +30,15 @@ pub struct StarEvent<'a> {
     /// Detailed information about the user who stared the repo.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+/// The specific actions that a star event has.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum StarAction {
+    /// A star was added to this repository.
+    Created,
+
+    /// The star was deleted from this repository.
+    Deleted,
 }

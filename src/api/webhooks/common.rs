@@ -7,14 +7,17 @@ mod enums;
 mod structs;
 
 pub use enums::{
-    AuthorAssociation, EventKind, IssueState, LockReason, RepoCreationType,
-    RepoPermission, RepoSelection, Type,
+    AuthorAssociation, CheckStatus, ConclusionStatus, EventKind, FileStatus, IssueState,
+    LockReason, MergeStateStatus, RepoCreationType, RepoPermission, RepoSelection, Type,
+    WorkflowEvent,
 };
 pub use structs::{
-    AccessPermissions, App, Base, Branch, Changes, Commit, CommitInner, CommitTree,
-    Committer, Head, IncomingCommit, IncomingIssue, IncomingRepo, IncomingTeam,
-    IncomingUser, Installation, Issue, Label, Links, Milestone, Org, Permissions, Plan,
-    Repo, ShortUser, Team, User, Verification,
+    AccessPermissions, App, Base, Branch, Changes, Comment, Commit, CommitInner,
+    CommitTree, Committer, Head, IncomingComment, IncomingCommit, IncomingIssue,
+    IncomingPullRequest, IncomingRepository, IncomingTeam, IncomingUser,
+    IncomingWorkflow, IncomingWorkflowRun, Installation, Issue, Label, Links, Milestone,
+    Org, Permissions, Plan, PullRequest, Repository, ShortUser, SimpleCommit, Team, User,
+    Verification,
 };
 
 pub type Dt = DateTime<Utc>;

@@ -1,12 +1,26 @@
 [global]
 address = "127.0.0.1"
-port = 8000
+port = 4567
 keep_alive = 5
 read_timeout = 5
 write_timeout = 5
 log_level = "normal"
-secret_key = "secret"
+# The secret that was used when you enabled webhooks for the repository.
+secret_key = ""
 
 [global.github]
-events = ["issues", "pull_request"]
-repos = ["mine/a-project"]
+# Create a matrix user name for this bot.
+# Magit will attempt to register this user if not already registered.
+user_name = ""
+# Matrix user password.
+password = ""
+# Github user token.
+user_token = ""
+# The repositories that should be watched for webhook events and send commands to.
+repos = ["DevinR528/magit"]
+# The events that should be watched for.
+# A full list can be found here
+# https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#in-this-article
+events = ["issues", "pull_request", "ping", "push", "star", "status"]
+# The format string to use for the specific event.
+pull_request = "[{repository}] {user} {}"

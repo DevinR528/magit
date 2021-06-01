@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::api::{webhooks::create::RefType, Installation, Org, Repo, User};
+use crate::api::{webhooks::create::RefType, Installation, Org, Repository, User};
 
 /// The payload of a delete event.
 #[derive(Clone, Debug, Deserialize)]
@@ -17,7 +17,7 @@ pub struct DeleteEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.

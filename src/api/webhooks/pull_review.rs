@@ -1,30 +1,12 @@
+use github_derive::StringEnum;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    webhooks::pull::PullRequest, AuthorAssociation, Changes, Dt, Installation, Links,
-    Org, Repo, User,
+    AuthorAssociation, Changes, Dt, Installation, Links, Org, PullRequest, Repository,
+    User,
 };
-
-/// The actions that can be taken for a pull request review.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum PullRequestReviewAction {
-    /// The pull request review has been created.
-    ///
-    /// Note: This seems to only apply to the PullRequestReview::state field.
-    Created,
-
-    /// A pull request review is submitted into a non-pending state.
-    Submitted,
-
-    /// The body of a review has been edited.
-    Edited,
-
-    /// A review has been dismissed.
-    Dismissed,
-}
 
 /// The payload of a pull request review event.
 #[derive(Clone, Debug, Deserialize)]
@@ -48,7 +30,7 @@ pub struct PullRequestReviewEvent<'a> {
 
     /// Detailed information about the repository that was stared.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Information about Github app installation.
     ///
@@ -63,6 +45,25 @@ pub struct PullRequestReviewEvent<'a> {
     /// Detailed information about the user who stared the repo.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+/// The actions that can be taken for a pull request review.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
+pub enum PullRequestReviewAction {
+    /// The pull request review has been created.
+    ///
+    /// Note: This seems to only apply to the PullRequestReview::state field.
+    Created,
+
+    /// A pull request review is submitted into a non-pending state.
+    Submitted,
+
+    /// The body of a review has been edited.
+    Edited,
+
+    /// A review has been dismissed.
+    Dismissed,
 }
 
 /// The review of a pull request.

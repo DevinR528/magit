@@ -1,16 +1,11 @@
 use std::path::Path;
 
+use github_derive::StringEnum;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
-use crate::api::{datetime, AuthorAssociation, Dt, Installation, Org, Repo, User};
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")] // TODO: if more variants are added use snake_case
-pub enum CommitCommentAction {
-    Created,
-}
+use crate::api::{datetime, AuthorAssociation, Dt, Installation, Org, Repository, User};
 
 /// The payload of a commit comment.
 #[derive(Clone, Debug, Deserialize)]
@@ -24,7 +19,7 @@ pub struct CommitCommentEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
@@ -40,6 +35,12 @@ pub struct CommitCommentEvent<'a> {
     /// Detailed information about the user of the app.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
+pub enum CommitCommentAction {
+    Created,
 }
 
 /// The payload of a check run event.

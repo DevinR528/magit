@@ -139,7 +139,15 @@ fn strip_lifetime_attrs(mut f: Field) -> Field {
     for attr in &mut f.attrs {
         if attr.path.is_ident("serde") {
             if let Ok(Meta::List(MetaList { nested, .. })) = attr.parse_meta() {
-                let filtered = nested.into_iter().filter(|meta| !matches!(meta, NestedMeta::Meta(Meta::Path(p)) if p.is_ident("borrow"))).collect::<Vec<NestedMeta>>();
+                let filtered = nested
+                    .into_iter()
+                    .filter(|meta| {
+                        !matches!(
+                            meta,
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("borrow")
+                        )
+                    })
+                    .collect::<Vec<NestedMeta>>();
                 *attr = parse_quote! { #[serde(#( #filtered, )*)]}
             }
         }
@@ -255,6 +263,8 @@ fn strip_lifetimes(field_type: &mut Type) -> syn::Result<bool> {
                     if last_seg.ident == "str" {
                         // &str -> String
                         Some(parse_quote! { ::std::string::String })
+                    } else if last_seg.ident == "Path" {
+                        Some(parse_quote! { ::std::path::PathBuf })
                     } else if last_seg.ident == "ApiLink"
                     // TODO: any more id types
                         || last_seg.ident == "ServerName"

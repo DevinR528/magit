@@ -1,27 +1,8 @@
+use github_derive::StringEnum;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 
 use crate::api::{Installation, Org, User};
-
-/// The actions that can be taken in an installation event.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum InstallationAction {
-    /// Someone installs a GitHub App.
-    Created,
-
-    /// Someone uninstalls a GitHub App.
-    Deleted,
-
-    /// Someone suspends a GitHub App installation.
-    Suspend,
-
-    /// Someone un-suspends a GitHub App installation.
-    Unsuspend,
-
-    /// Someone accepts new permissions for a GitHub App installation.
-    NewPermissionsAccepted,
-}
 
 /// The payload of an installation event.
 #[derive(Clone, Debug, Deserialize)]
@@ -47,6 +28,26 @@ pub struct InstallationEvent<'a> {
 
     /// Detailed information about the requester of the app.
     pub requester: Option<User<'a>>,
+}
+
+/// The actions that can be taken in an installation event.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum InstallationAction {
+    /// Someone installs a GitHub App.
+    Created,
+
+    /// Someone uninstalls a GitHub App.
+    Deleted,
+
+    /// Someone suspends a GitHub App installation.
+    Suspend,
+
+    /// Someone un-suspends a GitHub App installation.
+    Unsuspend,
+
+    /// Someone accepts new permissions for a GitHub App installation.
+    NewPermissionsAccepted,
 }
 
 /// Information about repositories that the installation can access.
