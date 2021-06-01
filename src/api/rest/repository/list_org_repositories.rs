@@ -1,13 +1,9 @@
-use std::borrow::Cow;
-
 use github_derive::github_rest_api;
-use reqwest::{header::HeaderMap, Method};
-use ruma::{serde::StringEnum, uint, UInt};
-use serde::Serialize;
+use ruma::UInt;
 
 use crate::api::{
     rest::{ApplicationV3Json, Direction, Sort, Type},
-    IncomingRepo,
+    IncomingRepository,
 };
 
 github_rest_api! {
@@ -20,6 +16,7 @@ github_rest_api! {
     }
 
     request: {
+        /// Optional accept header to enable preview features.
         #[github(header = ACCEPT)]
         pub accept: Option<ApplicationV3Json>,
 
@@ -47,7 +44,7 @@ github_rest_api! {
 
         /// Result per page.
         ///
-        /// Defaults to 1.
+        /// Defaults to 30 and max 100.
         #[github(query)]
         #[serde(serialize_with = "crate::api::rest::per_page")]
         pub per_page: Option<UInt>,
@@ -60,9 +57,9 @@ github_rest_api! {
         pub page: Option<UInt>,
     }
 
-    #[github(with = "::magit::api::rest::repository::list_org_repositories::repositories")]
+    #[github(with = magit::api::rest::repository::list_org_repositories::repositories)]
     response: {
-        pub repositories: Vec<IncomingRepo>,
+        pub repositories: Vec<IncomingRepository>,
     }
 }
 
@@ -70,9 +67,7 @@ pub(crate) fn repositories<'de, D>(deser: D) -> Result<Response, D::Error>
 where
     D: serde::de::Deserializer<'de>,
 {
-    use serde::Deserialize;
-    let repositories = Vec::<IncomingRepo>::deserialize(deser)?;
-    Ok(Response { repositories })
+    Ok(Response { repositories: serde::Deserialize::deserialize(deser)? })
 }
 
 #[test]

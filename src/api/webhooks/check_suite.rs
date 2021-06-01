@@ -1,30 +1,12 @@
+use github_derive::StringEnum;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    datetime, default_null, App, Committer, Dt, Installation, Org, Repo, User,
+    datetime, default_null, App, CheckStatus, Committer, ConclusionStatus, Dt,
+    Installation, Org, Repository, SimpleCommit, User,
 };
-
-/// The actions that can be taken in a check event.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CheckAction {
-    /// A new check run was created.
-    Created,
-
-    /// The status of the check run is completed.
-    Completed,
-
-    /// Occurs when new code is pushed to the app's repository.
-    Requested,
-
-    /// Someone requested to re-run your check run from the pull request UI.
-    Rerequested,
-
-    /// Someone requested an action your app provides to be taken.
-    RequestedAction,
-}
 
 /// The payload of a check suite event.
 #[derive(Clone, Debug, Deserialize)]
@@ -38,7 +20,7 @@ pub struct CheckSuiteEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
@@ -58,6 +40,26 @@ pub struct CheckSuiteEvent<'a> {
     /// Detailed information about the requester of the app.
     #[serde(borrow)]
     pub requester: Option<User<'a>>,
+}
+
+/// The actions that can be taken in a check event.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum CheckAction {
+    /// A new check run was created.
+    Created,
+
+    /// The status of the check run is completed.
+    Completed,
+
+    /// Occurs when new code is pushed to the app's repository.
+    Requested,
+
+    /// Someone requested to re-run your check run from the pull request UI.
+    Rerequested,
+
+    /// Someone requested an action your app provides to be taken.
+    RequestedAction,
 }
 
 /// Information about a suite of checks.
@@ -104,7 +106,7 @@ pub struct CheckSuite<'a> {
     pub check_runs_url: Option<Url>,
 
     /// The head commit.
-    pub head_commit: Option<HeadCommit<'a>>,
+    pub head_commit: Option<SimpleCommit<'a>>,
 
     /// The time in UTC when the check was created.
     #[serde(deserialize_with = "datetime")]
@@ -113,63 +115,6 @@ pub struct CheckSuite<'a> {
     /// The time in UTC when the check was last updated.
     #[serde(deserialize_with = "datetime")]
     pub updated_at: Dt,
-}
-
-#[derive(Debug, Copy, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CheckStatus {
-    /// There are checks queued to run.
-    Queued,
-
-    /// This check has finished.
-    Completed,
-
-    /// The check is in progress.
-    InProgress,
-
-    /// The check has been requested.
-    Requested,
-
-    /// `None` is that same as not present or null.
-    None,
-}
-
-impl Default for CheckStatus {
-    fn default() -> Self { Self::None }
-}
-
-#[derive(Debug, Copy, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ConclusionStatus {
-    /// The check has succeeded.
-    Success,
-
-    /// The check has failed.
-    Failure,
-
-    /// The check has finished with a neutral result.
-    Neutral,
-
-    /// The check has been canceled.
-    Cancelled,
-
-    /// The check has timed out.
-    TimeOut,
-
-    /// The check needs attention.
-    ActionRequired,
-
-    /// The check has gone stale.
-    ///
-    /// Something has changed while the check was running.
-    Stale,
-
-    /// `None` is that same as not present or null.
-    None,
-}
-
-impl Default for ConclusionStatus {
-    fn default() -> Self { Self::None }
 }
 
 /// Information about pull requests being checked.
@@ -234,28 +179,4 @@ pub struct RepoRef<'a> {
 
     /// The name of this repository.
     pub name: &'a str,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct HeadCommit<'a> {
-    /// SHA of the head commit.
-    pub id: &'a str,
-
-    /// SHA of the tree this commit is a part of.
-    pub tree_id: &'a str,
-
-    /// Commit message.
-    pub message: &'a str,
-
-    /// Timestamp of this commit.
-    pub timestamp: Dt,
-
-    /// Name and email of the commit author.
-    #[serde(borrow)]
-    pub author: Committer<'a>,
-
-    /// Name and email of the commit committer :p
-    #[serde(borrow)]
-    pub committer: Committer<'a>,
 }

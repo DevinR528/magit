@@ -1,6 +1,6 @@
 use std::fmt;
 
-use ruma::serde::StringEnum;
+use github_derive::StringEnum;
 use serde::Deserialize;
 
 #[derive(Clone, Debug)]
@@ -104,15 +104,15 @@ impl<'de> Deserialize<'de> for LockReason {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
 pub enum RepoSelection {
     All,
     Selected,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
 pub enum RepoPermission {
     /// Read only access.
     Read,
@@ -133,8 +133,8 @@ impl Default for RepoPermission {
     fn default() -> Self { Self::Read }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
 pub enum RepoCreationType {
     All,
     Private,
@@ -145,8 +145,8 @@ impl Default for RepoCreationType {
     fn default() -> Self { Self::All }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
 pub enum IssueState {
     Open,
     Closed,
@@ -160,7 +160,7 @@ impl Default for IssueState {
 /// An enum representing all the different payload event types within the Github webhooks
 /// API.
 #[derive(Clone, Debug, PartialEq, Eq, StringEnum)]
-#[ruma_enum(rename_all = "snake_case")]
+#[github_enum(rename_all = "snake_case")]
 pub enum EventKind {
     CheckRun,
     CheckSuite,
@@ -208,12 +208,10 @@ pub enum EventKind {
     Watch,
     WorkflowDispatch,
     WorkflowRun,
-    #[doc(hidden)]
-    _Custom(String),
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AuthorAssociation {
     Collaborator,
     Contributor,
@@ -227,4 +225,124 @@ pub enum AuthorAssociation {
 
 impl Default for AuthorAssociation {
     fn default() -> Self { Self::None }
+}
+
+#[derive(Debug, Copy, Clone, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum CheckStatus {
+    /// There are checks queued to run.
+    Queued,
+
+    /// This check has finished.
+    Completed,
+
+    /// The check is in progress.
+    InProgress,
+
+    /// The check has been requested.
+    Requested,
+
+    /// `None` is that same as not present or null.
+    None,
+}
+
+impl Default for CheckStatus {
+    fn default() -> Self { Self::None }
+}
+
+#[derive(Debug, Copy, Clone, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum ConclusionStatus {
+    /// The check has succeeded.
+    Success,
+
+    /// The check has failed.
+    Failure,
+
+    /// The check has finished with a neutral result.
+    Neutral,
+
+    /// The check has been canceled.
+    Cancelled,
+
+    /// The check has timed out.
+    TimeOut,
+
+    /// The check needs attention.
+    ActionRequired,
+
+    /// The check has gone stale.
+    ///
+    /// Something has changed while the check was running.
+    Stale,
+
+    /// `None` is that same as not present or null.
+    None,
+}
+
+impl Default for ConclusionStatus {
+    fn default() -> Self { Self::None }
+}
+
+/// The event that triggered a workflow run.
+#[derive(Clone, Debug, PartialEq, Eq, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum WorkflowEvent {
+    /// A push from a branch that has a workflow enabled.
+    Push,
+
+    /// A pull request against a branch that has workflows enabled.
+    PullRequest,
+
+    /// An issue opened that has a workflow associated with it.
+    Issue,
+}
+
+/// The status of a file tracked by github.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
+pub enum FileStatus {
+    /// The file has been added / created.
+    Added,
+
+    /// The file has been added.
+    Modified,
+
+    /// The file has been removed.
+    Removed,
+
+    /// The file has been renamed.
+    Renamed,
+
+    // TODO confirm
+    Changed,
+}
+
+/// The status of a file tracked by github.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "snake_case")]
+pub enum MergeStateStatus {
+    /// The head ref is out of date.
+    Behind,
+
+    /// The merge is blocked.
+    Blocked,
+
+    /// Mergeable and passing commit status.
+    Clean,
+
+    /// The merge commit cannot be cleanly created..
+    Dirty,
+
+    // The merge is blocked due to the pull request being a draft.
+    Draft,
+
+    /// Mergeable with passing commit status and pre-receive hooks.
+    HasHook,
+
+    /// The state cannot currently be determined.
+    Unknown,
+
+    /// Mergeable with non-passing commit status.
+    Unstable,
 }

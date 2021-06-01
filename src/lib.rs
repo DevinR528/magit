@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use std::collections::BTreeMap;
+
 use rocket::{
     catchers,
     figment::{
@@ -25,6 +27,8 @@ use api::EventKind;
 pub struct GithubConfig {
     repos: Vec<String>,
     events: Vec<EventKind>,
+    #[serde(flatten)]
+    format_strings: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

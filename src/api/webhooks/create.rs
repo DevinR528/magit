@@ -1,17 +1,7 @@
+use github_derive::StringEnum;
 use serde::Deserialize;
 
-use crate::api::{Installation, Org, Repo, User};
-
-/// The type of git object created.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum RefType {
-    /// A tag git object was created.
-    Tag,
-
-    /// A branch git object was created.
-    Branch,
-}
+use crate::api::{Installation, Org, Repository, User};
 
 /// The payload of a create event.
 #[derive(Clone, Debug, Deserialize)]
@@ -34,7 +24,7 @@ pub struct CreateEvent<'a> {
 
     /// Information about the repositories this app has access to.
     #[serde(borrow)]
-    pub repository: Repo<'a>,
+    pub repository: Repository<'a>,
 
     /// Detailed information about the organization the app
     /// belongs to.
@@ -50,4 +40,15 @@ pub struct CreateEvent<'a> {
     /// Detailed information about the user of the app.
     #[serde(borrow)]
     pub sender: User<'a>,
+}
+
+/// The type of git object created.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
+pub enum RefType {
+    /// A tag git object was created.
+    Tag,
+
+    /// A branch git object was created.
+    Branch,
 }

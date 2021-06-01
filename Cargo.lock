@@ -1076,6 +1076,7 @@ dependencies = [
  "dirs",
  "github-derive",
  "hmac 0.11.0",
+ "indexmap",
  "matrix-sdk",
  "octocrab",
  "reqwest",

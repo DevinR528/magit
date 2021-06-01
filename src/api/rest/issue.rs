@@ -1,3 +1,10 @@
+pub mod assign_issue;
+pub mod create_comment;
 pub mod create_issue;
+pub mod delete_comment;
+pub mod get_comment;
 pub mod get_issue;
+pub mod list_issue_comments;
 pub mod list_repo_issues;
+pub mod update_comment;
+pub mod update_issue;

@@ -138,16 +138,17 @@ mod test {
         check_suite::{CheckAction, CheckSuite, CheckSuiteEvent},
         commit_comment::{CommitComment, CommitCommentAction, CommitCommentEvent},
         common::{
-            App, AuthorAssociation, Changes, Commit, CommitInner, Committer,
-            Installation, Issue, IssueState, Milestone, Repo, Type, User,
+            App, AuthorAssociation, Changes, Comment, Commit, CommitInner, Committer,
+            Installation, Issue, IssueState, Milestone, PullRequest, Repository, Type,
+            User,
         },
         create::{CreateEvent, RefType},
         delete::DeleteEvent,
         installation::{InstallationAction, InstallationEvent},
         issue::{IssueAction, IssueEvent},
-        issue_comment::{Comment, IssueCommentAction, IssueCommentEvent},
+        issue_comment::{IssueCommentAction, IssueCommentEvent},
         milestone::{MilestoneAction, MilestoneEvent},
-        pull::{PullRequest, PullRequestAction, PullRequestEvent},
+        pull::{PullRequestAction, PullRequestEvent},
         pull_review::{
             PullRequestReview, PullRequestReviewAction, PullRequestReviewEvent,
         },
@@ -173,7 +174,7 @@ mod test {
             star,
             StarEvent {
                 action: StarAction::Created,
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -196,7 +197,7 @@ mod test {
                 state: StatusState::Success,
                 branches,
                 commit: Commit { commit: CommitInner { message, .. }, .. },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -224,7 +225,7 @@ mod test {
                 pull_request: PullRequest {
                     state: IssueState::Open, all_urls: pull_urls, ..
                 },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -248,7 +249,7 @@ mod test {
             IssueEvent {
                 action: IssueAction::Edited,
                 issue: Issue { number, .. },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -305,7 +306,7 @@ mod test {
                     app: App { events, .. },
                     ..
                 },
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -338,7 +339,7 @@ mod test {
                     output: Output { annotations_count, .. },
                     ..
                 },
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -372,7 +373,7 @@ mod test {
                     author_association: AuthorAssociation::Owner,
                     ..
                 },
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -405,7 +406,7 @@ mod test {
                     author_association: AuthorAssociation::Owner,
                     ..
                 },
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -435,7 +436,7 @@ mod test {
                 pull_request: PullRequest {
                     state: IssueState::Open, all_urls: pull_urls, number, ..
                 },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -461,7 +462,7 @@ mod test {
                 created, deleted,
                 pusher: Committer { name: committer_name, .. },
                 commits,
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -487,7 +488,7 @@ mod test {
             ReleaseEvent {
                 action: ReleaseAction::Published,
                 release: Release { target_commitish, assets, .. },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -515,7 +516,7 @@ mod test {
                 pusher_type,
                 description: None,
                 master_branch,
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -541,7 +542,7 @@ mod test {
                 ref_,
                 ref_type: RefType::Tag,
                 pusher_type,
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -567,7 +568,7 @@ mod test {
                 action: MilestoneAction::Created,
                 milestone: Milestone { title, number, .. },
                 changes: Some(Changes { .. }),
-                repository: Repo { all_urls, .. },
+                repository: Repository { all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 installation: None,
@@ -590,7 +591,7 @@ mod test {
             watch,
             WatchEvent {
                 action: WatchAction::Started,
-                repository: Repo { .. },
+                repository: Repository { .. },
                 sender: User { .. },
                 organization: None,
                 installation: None,
@@ -613,7 +614,7 @@ mod test {
             PullRequestReviewCommentEvent {
                 action: PullRequestReviewCommentAction::Created,
                 comment: PullRequestReviewComment { diff_hunk, commit_id, .. },
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..
@@ -638,7 +639,7 @@ mod test {
                 created, deleted, forced,
                 pusher: Committer { name: committer_name, .. },
                 commits,
-                repository: Repo { name, all_urls, .. },
+                repository: Repository { name, all_urls, .. },
                 sender: User { kind: Some(Type::User), all_urls: sender_urls, .. },
                 organization: None,
                 ..

@@ -1,14 +1,49 @@
+use github_derive::StringEnum;
 use matrix_sdk::UInt;
 use serde::Deserialize;
 use url::Url;
 
 use crate::api::{
-    datetime_opt, default_null, Changes, Dt, Installation, Org, Repo, UrlMap, User,
+    datetime_opt, default_null, Changes, Dt, Installation, Org, Repository, UrlMap, User,
 };
 
-/// The specific actions that a release event has.
+/// The payload of a release event.
 #[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
+pub struct ReleaseEvent<'a> {
+    /// One of `created` or `deleted`.
+    pub action: ReleaseAction,
+
+    /// Information about this release.
+    #[serde(borrow)]
+    pub release: Release<'a>,
+
+    /// Changes are only present if the action was edited.
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
+
+    /// Detailed information about the repository that was stared.
+    #[serde(borrow)]
+    pub repository: Repository<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
+
+    /// Detailed information about the organization the repo that was stared
+    /// belongs to.
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
+
+    /// Detailed information about the user who stared the repo.
+    #[serde(borrow)]
+    pub sender: User<'a>,
+}
+
+/// The specific actions that a release event has.
+#[derive(Clone, Debug, StringEnum)]
+#[github_enum(rename_all = "lowercase")]
 pub enum ReleaseAction {
     /// A release, pre-release, or draft of a release is published.
     Published,
@@ -32,40 +67,6 @@ pub enum ReleaseAction {
     /// A release or draft of a release is published, or a pre-release is changed to a
     /// release.
     Release,
-}
-
-/// The payload of a release event.
-#[derive(Clone, Debug, Deserialize)]
-pub struct ReleaseEvent<'a> {
-    /// One of `created` or `deleted`.
-    pub action: ReleaseAction,
-
-    /// Information about this release.
-    #[serde(borrow)]
-    pub release: Release<'a>,
-
-    /// Changes are only present if the action was edited.
-    #[serde(borrow)]
-    pub changes: Option<Changes<'a>>,
-
-    /// Detailed information about the repository that was stared.
-    #[serde(borrow)]
-    pub repository: Repo<'a>,
-
-    /// Information about Github app installation.
-    ///
-    /// This is only present if the event is sent from said app.
-    #[serde(borrow)]
-    pub installation: Option<Installation<'a>>,
-
-    /// Detailed information about the organization the repo that was stared
-    /// belongs to.
-    #[serde(borrow)]
-    pub organization: Option<Org<'a>>,
-
-    /// Detailed information about the user who stared the repo.
-    #[serde(borrow)]
-    pub sender: User<'a>,
 }
 
 /// Information about a release.

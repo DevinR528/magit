@@ -1,11 +1,11 @@
 use proc_macro2::{Span, TokenStream};
-use quote::{format_ident, quote, ToTokens};
+use quote::{quote, ToTokens};
 use syn::{
     braced,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
     AngleBracketedGenericArguments, Attribute, Field, GenericArgument, Ident, Lit,
-    LitStr, ParenthesizedGenericArguments, PathArguments, Token, Type, TypePath,
+    LitStr, ParenthesizedGenericArguments, Path, PathArguments, Token, Type, TypePath,
     TypeReference,
 };
 
@@ -68,6 +68,29 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
             ty: f.ty.clone(),
         });
     }
+
+    let accept_header = if fields
+        .iter()
+        .any(|f|
+            f.name == "accept"
+                && matches!(
+                    &f.ty,
+                    Type::Path(TypePath { path, .. }) if path.segments.last().map_or(false, |p| p.ident == "Option")
+                )
+        )
+    {
+        quote! {
+            let request = if let Some(accept) = self.accept.as_ref() {
+                request.header(::reqwest::header::ACCEPT, accept.to_string())
+            } else {
+                request
+            };
+        }
+    } else {
+        quote! {
+            let request = request.header(::reqwest::header::ACCEPT, self.accept.to_string());
+        }
+    };
 
     let mut fmt_string = meta.path.value();
     let mut fmt_args = vec![];
@@ -210,11 +233,7 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
                     #path_str,
                 ));
 
-                let request = if let Some(accept) = self.accept.as_ref() {
-                    request.header(::reqwest::header::ACCEPT, accept.to_string())
-                } else {
-                    request
-                };
+                #accept_header
 
                 let request = if Self::METADATA.authentication && github.tkn.is_some() {
                     request.bearer_auth(github.tkn.as_ref().unwrap())
@@ -227,8 +246,9 @@ fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<TokenStream> {
                 #body
 
                 let req = request.build()?;
-                println!("URL {:?}", req.url());
-                // println!("URL {}", req.method());
+
+                println!("URL {:?}", req.url().to_string());
+
                 Ok(req)
             }
         }
@@ -290,79 +310,100 @@ struct RequestField {
 }
 
 fn expand_response(res: &Response) -> syn::Result<TokenStream> {
-    let custom_attr = res.attrs.iter().find_map(|attr| {
-        attr.path
-            .is_ident("github")
-            .then(|| attr.parse_args::<DeserAttr>().ok())
-            .flatten()
-    });
-    let (impl_deser, derive_deser) =
-        if let Some(DeserAttr::With(custom_deser)) = custom_attr {
-            let s = custom_deser.value().replace("\"", "");
-            let raw_path = s.split("::").flat_map(|seg| {
-                if seg.is_empty() {
-                    TokenStream::new()
-                } else {
-                    let seg = format_ident!("{}", seg);
-                    quote! { ::#seg }
-                }
-            });
-            let deser_fn = quote! { #( #raw_path )* (deser) };
-            (
-                quote! {
-                    impl<'de> ::serde::de::Deserialize<'de> for Response {
-                        fn deserialize<D>(deser: D) -> Result<Response, D::Error>
-                        where
-                            D: ::serde::de::Deserializer<'de>,
-                        {
-                            #deser_fn
-                        }
+    let single_attr = res
+        .attrs
+        .iter()
+        .filter_map(|attr| {
+            attr.path
+                .is_ident("github")
+                .then(|| attr.parse_args::<DeserAttr>().ok())
+                .flatten()
+        })
+        .collect::<Vec<_>>();
+    if single_attr.len() > 1 {
+        return Err(syn::Error::new_spanned(
+            &res.resp_kw,
+            "only one attribute can be applied to the response",
+        ));
+    }
+    let single_attr = single_attr.first();
+    let (impl_deser, derive_deser) = if let Some(DeserAttr::With(path)) = single_attr {
+        (
+            quote! {
+                impl<'de> ::serde::de::Deserialize<'de> for Response {
+                    fn deserialize<D>(deser: D) -> Result<Response, D::Error>
+                    where
+                        D: ::serde::de::Deserializer<'de>,
+                    {
+                        #path (deser)
                     }
-                },
-                TokenStream::new(),
-            )
-        } else {
-            (TokenStream::new(), quote! { ::serde::Deserialize })
-        };
+                }
+            },
+            TokenStream::new(),
+        )
+    } else {
+        (TokenStream::new(), quote! { ::serde::Deserialize })
+    };
 
     let attr = res.attrs.iter().filter(|attr| !attr.path.is_ident("github"));
     let field = res.res_fields.iter();
 
-    let from_reqwest = quote! {
+    let response = quote! {
+        #[derive(Clone, Debug, #derive_deser)]
+        #( #attr )*
+        pub struct Response { #( #field ),* }
+    };
+
+    let return_response = if res.res_fields.is_empty() {
+        quote! { Ok(Response {}) }
+    } else if let Some(DeserAttr::ForwardToBody(field)) = single_attr {
+        quote! {
+            Ok(Response { #field: resp.text().await? })
+        }
+    // TODO: remove possibly ??
+    } else if let Some(DeserAttr::ForwardToBodyWith(field, call)) = single_attr {
+        quote! {
+            Ok(Response { #field: #call(resp).await? })
+        }
+    } else {
+        quote! {
+            let json = resp.text().await?;
+
+            println!("{}", json);
+
+            let jd = &mut ::serde_json::Deserializer::from_str(
+                &json
+            );
+            ::serde_path_to_error::deserialize(jd).map_err(Into::into)
+            // ::serde_json::from_str(
+            //     &resp.text().await?
+            // ).map_err(Into::into)
+        }
+    };
+
+    let impl_from_reqwest = quote! {
         #[::rocket::async_trait]
         impl ::magit::api::GithubResponse for Response {
             async fn from_response(resp: reqwest::Response) -> Result<Response, ::magit::api::Error> {
                 ::magit::api::from_status(resp.status())?;
 
-                let json = resp.text().await?;
-
-                println!("{}", json);
-
-                let jd = &mut ::serde_json::Deserializer::from_str(
-                    &json
-                );
-                ::serde_path_to_error::deserialize(jd).map_err(Into::into)
-                // ::serde_json::from_str(
-                //     &resp.text().await?
-                // ).map_err(Into::into)
+                #return_response
             }
         }
     };
 
     Ok(quote! {
-        #[derive(Clone, Debug, #derive_deser)]
-        #( #attr )*
-        pub struct Response { #( #field ),* }
-
+        #response
         #impl_deser
-
-        #from_reqwest
+        #impl_from_reqwest
     })
 }
 
 #[derive(Clone, Debug)]
 enum DeserAttr {
-    With(LitStr),
+    With(Path),
+    ForwardToBody(Ident),
+    ForwardToBodyWith(Ident, Path),
 }
 
 impl Parse for DeserAttr {
@@ -372,6 +413,19 @@ impl Parse for DeserAttr {
             let _ = input.parse::<kw::with>()?;
             let _ = input.parse::<Token![=]>()?;
             Ok(Self::With(input.parse()?))
+        } else if lookahead.peek(kw::forward_to_body) {
+            let _ = input.parse::<kw::forward_to_body>()?;
+            let _ = input.parse::<Token![=]>()?;
+            Ok(Self::ForwardToBody(input.parse()?))
+        } else if lookahead.peek(kw::forward_to_body_with) {
+            let _ = input.parse::<kw::forward_to_body_with>()?;
+            let _ = input.parse::<Token![=]>()?;
+            let tuple;
+            syn::parenthesized!(tuple in input);
+            let field = tuple.parse()?;
+            let _ = tuple.parse::<Token![,]>()?;
+            let call = tuple.parse()?;
+            Ok(Self::ForwardToBodyWith(field, call))
         } else {
             Err(lookahead.error())
         }
@@ -402,6 +456,8 @@ mod kw {
     custom_keyword!(authentication);
 
     custom_keyword!(with);
+    custom_keyword!(forward_to_body);
+    custom_keyword!(forward_to_body_with);
 
     custom_keyword!(header);
     custom_keyword!(query);
