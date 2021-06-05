@@ -30,7 +30,7 @@ async fn stars() {
     let (to_matrix, mut from_gh) = channel(1024);
     let json = include_str!("../test_json/star.json");
 
-    let client = Client::tracked(app(to_matrix)).await.expect("valid rocket instance");
+    let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
     let response = client
         .post("/")
         .header(ContentType::JSON)
@@ -43,4 +43,44 @@ async fn stars() {
 
     assert_eq!(response.status(), Status::Ok);
     assert_eq!("DevinR528", from_gh.recv().await.unwrap());
+}
+
+#[tokio::test]
+async fn pull_request() {
+    let (to_matrix, mut from_gh) = channel(1024);
+    let json = include_str!("../test_json/pull_request.json");
+
+    let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
+    let response = client
+        .post("/")
+        .header(ContentType::JSON)
+        .header(Header::new(CONTENT_LEN, json.len().to_string()))
+        .header(Header::new(X_GITHUB_EVENT, "pull_request"))
+        .header(Header::new(X_HUB_SIGNATURE, format!("sha256={}", make_signature(json))))
+        .body(json)
+        .dispatch()
+        .await;
+
+    assert_eq!(response.status(), Status::Ok);
+    println!("{}", from_gh.recv().await.unwrap());
+}
+
+#[tokio::test]
+async fn issue() {
+    let (to_matrix, mut from_gh) = channel(1024);
+    let json = include_str!("../test_json/issue.json");
+
+    let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
+    let response = client
+        .post("/")
+        .header(ContentType::JSON)
+        .header(Header::new(CONTENT_LEN, json.len().to_string()))
+        .header(Header::new(X_GITHUB_EVENT, "issues"))
+        .header(Header::new(X_HUB_SIGNATURE, format!("sha256={}", make_signature(json))))
+        .body(json)
+        .dispatch()
+        .await;
+
+    assert_eq!(response.status(), Status::Ok);
+    println!("{}", from_gh.recv().await.unwrap());
 }

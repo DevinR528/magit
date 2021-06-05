@@ -104,7 +104,7 @@ impl<'a, F: AsRef<str>, T: Copy + Display + ?Sized + 'a> Display for Arguments<'
 
                     let arg_name = fmt_str
                         .chars()
-                        .skip(to)
+                        .skip(to + 1)
                         .take_while(|c| *c != '}')
                         .collect::<String>();
                     if !arg_name.is_empty() {
