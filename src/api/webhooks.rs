@@ -211,7 +211,7 @@ mod test {
 
     #[test]
     fn pull() {
-        let json = include_str!("../../test_json/pull.json");
+        let json = include_str!("../../test_json/pull_request.json");
 
         let jd = &mut serde_json::Deserializer::from_str(json);
         let pull =
