@@ -1,63 +1,36 @@
-use matrix_sdk::{
-    self, async_trait,
+use magit::app;
+use ruma::{
+    api::{
+        client::{
+            r0::{
+                message::send_message_event::Request as MessageRequest,
+                sync::sync_events::Request as SyncRequest,
+            },
+            Error as ApiError,
+        },
+        error::MatrixError,
+        SendAccessToken,
+    },
+    client::{
+        http_client::Isahc, Client, Error as ClientError, HttpClient, HttpClientExt,
+    },
     events::{
         room::message::{MessageEventContent, MessageType, TextMessageEventContent},
-        AnyMessageEventContent, SyncMessageEvent,
+        AnyMessageEventContent, AnySyncMessageEvent, AnySyncRoomEvent, SyncMessageEvent,
     },
-    room::Room,
-    Client, ClientConfig, EventHandler, SyncSettings,
+    presence::PresenceState,
+    uint, RoomId,
 };
-use rocket::{
-    catchers,
-    figment::{
-        providers::{Env, Format, Toml},
-        Figment,
-    },
-    routes,
+use tokio::{
+    sync::mpsc::{channel, Receiver, Sender},
+    task,
+    time::{sleep, Duration},
 };
-use serde::Deserialize;
-use tokio::sync::mpsc::{channel, Receiver, Sender};
-use url::Url;
 
-mod api;
-mod response;
-mod routes;
-#[cfg(test)]
-mod tests;
+/// Used to increase the sleep duration between checking for github webhook messages.
+const BACKOFF: usize = 20;
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct Config {
-    secret_key: String,
-}
-
-pub struct Store {
-    config: Config,
-    to_matrix: Sender<String>,
-}
-
-pub fn app(to_matrix: Sender<String>) -> rocket::Rocket<rocket::Build> {
-    std::env::set_var("GITHUB_CONFIG", "./github.toml");
-
-    let raw_config = Figment::from(rocket::Config::release_default())
-        .merge(
-            Toml::file(Env::var("GITHUB_CONFIG").expect(
-                "The GITHUB_CONFIG env var needs to be set. Example: /etc/github.toml",
-            ))
-            .nested(),
-        )
-        .merge(Env::prefixed("GITHUB_").global());
-
-    let config: Config = raw_config
-        .extract()
-        .expect("It looks like your config is invalid. Please take a look at the error");
-    std::env::set_var("GITHUB_WEBHOOK_SECRET", &config.secret_key);
-    let store = Store { config, to_matrix };
-    rocket::custom(raw_config)
-        .manage(store)
-        .mount("/", routes![routes::index])
-        .register("/", catchers![not_found])
-}
-
+#[allow(unused)]
 struct CommandBot {
     listener: Receiver<String>,
     sender: Sender<String>,
@@ -69,29 +42,53 @@ impl CommandBot {
     }
 }
 
-#[async_trait]
-impl EventHandler for CommandBot {
-    async fn on_room_message(
-        &self,
-        room: Room,
-        event: &SyncMessageEvent<MessageEventContent>,
-    ) {
-        if let Room::Joined(room) = room {
-            let msg_body = if let SyncMessageEvent {
-                content:
-                    MessageEventContent {
-                        msgtype:
-                            MessageType::Text(TextMessageEventContent {
-                                body: msg_body, ..
-                            }),
-                        ..
-                    },
-                ..
-            } = event
+async fn on_room_message<C: HttpClientExt>(
+    client: C,
+    mut since: String,
+    room_id: &RoomId,
+) -> Result<(), ClientError<C::Error, ApiError>> {
+    loop {
+        let response = client
+            .send_matrix_request(
+                "",
+                SendAccessToken::IfRequired(""),
+                assign::assign!(SyncRequest::new(), {
+                    filter: None,
+                    since: Some(&since),
+                    set_presence: &PresenceState::Online,
+                    timeout: Some(Duration::from_millis(500)),
+                }),
+            )
+            .await?;
+
+        since = response.next_batch.clone();
+
+        for event in response
+            .rooms
+            .join
+            .get(room_id)
+            .into_iter()
+            .flat_map(|room| &room.timeline.events)
+            .filter_map(|ev| ev.deserialize().ok())
+        {
+            let msg_body = if let AnySyncRoomEvent::Message(
+                AnySyncMessageEvent::RoomMessage(SyncMessageEvent {
+                    content:
+                        MessageEventContent {
+                            msgtype:
+                                MessageType::Text(TextMessageEventContent {
+                                    body: msg_body,
+                                    ..
+                                }),
+                            ..
+                        },
+                    ..
+                }),
+            ) = event
             {
                 msg_body
             } else {
-                return;
+                continue;
             };
 
             if msg_body.contains("!party") {
@@ -103,50 +100,42 @@ impl EventHandler for CommandBot {
 
                 // send our message to the room we found the "!party" command in
                 // the last parameter is an optional Uuid which we don't care about.
-                room.send(content, None).await.unwrap();
+                client
+                    .send_matrix_request(
+                        "",
+                        SendAccessToken::IfRequired(""),
+                        MessageRequest::new(room_id, "", &content),
+                    )
+                    .await?;
 
                 println!("message sent");
             }
         }
     }
+    Ok(())
 }
 
+#[allow(unused)]
 async fn login_and_sync(
     homeserver_url: &str,
     username: String,
     password: String,
     listener: Receiver<String>,
     sender: Sender<String>,
-) -> Result<matrix_sdk::Client, matrix_sdk::Error> {
-    // the location for `JsonStore` to save files to
-    let mut home = dirs::home_dir().expect("no home directory found");
-    home.push("github_bot");
+) -> Result<Client<Isahc>, ClientError<isahc::Error, ApiError>> {
+    let client =
+        Client::with_http_client(Isahc::new().unwrap(), homeserver_url.to_owned(), None);
 
-    let client_config = ClientConfig::new().store_path(home);
-
-    let homeserver_url =
-        Url::parse(&homeserver_url).expect("Couldn't parse the homeserver URL");
-    // create a new Client with the given homeserver url and config
-    let client = Client::new_with_config(homeserver_url, client_config).unwrap();
-
-    client.login(&username, &password, None, Some("github bot")).await?;
+    client.log_in(&username, &password, None, Some("github bot")).await?;
 
     println!("logged in as {}", username);
-
-    // An initial sync to set up state and so our bot doesn't respond to old
-    // messages. If the `StateStore` finds saved state in the location given the
-    // initial sync will be skipped in favor of loading state from the store
-    client.sync_once(SyncSettings::default()).await.unwrap();
-    // add our CommandBot to be notified of incoming messages, we do this after the
-    // initial sync to avoid responding to messages before the bot was running.
-    client.set_event_handler(Box::new(CommandBot::new(listener, sender))).await;
 
     Ok(client)
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (to_matrix, from_gh) = channel(1024);
+    let (to_matrix, mut from_gh) = channel(1024);
     // let (to_gh, mut from_matrix) = channel(1024);
 
     // let (homeserver_url, username, password) =
@@ -168,20 +157,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // let sender = client.clone();
     // tokio::spawn(async move { client.sync(settings).await });
-    // tokio::spawn(async move {
-    //     tokio::select! {
-    //         Some(msg) = from_matrix.recv() => {
-    //             sender.rooms();
-    //         }
-    //     }
-    // });
+    tokio::spawn(async move {
+        let mut durations = vec![];
+        for i in 0..BACKOFF {
+            let time = Duration::from_millis((50 * i) as u64);
+            durations.push(time);
+        }
+        let mut next_sleep = 1;
+        loop {
+            let idx = next_sleep % BACKOFF;
+            let sleep = sleep(durations[idx]);
+            tokio::pin!(sleep);
+
+            tokio::select! {
+                _ = &mut sleep => {
+                    next_sleep += 1;
+                    task::yield_now().await;
+                }
+                Some(msg) = from_gh.recv() => {
+                    println!("{}", msg);
+                    // sender.rooms();
+                }
+            }
+        }
+    });
+
     app(to_matrix).launch().await?;
     Ok(())
-}
-
-#[rocket::catch(404)]
-fn not_found(r: &rocket::Request<'_>) -> String {
-    println!("{:?}", r);
-    println!("{:?}", r.uri());
-    "not found".to_string()
 }

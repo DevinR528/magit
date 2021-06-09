@@ -1,15 +1,16 @@
-use matrix_sdk::UInt;
+use ruma::{serde::StringEnum, UInt};
 use serde::Deserialize;
-use serde_json::Value as JsonValue;
 use url::Url;
 
 use crate::api::common::{
-    Dt, IssueState, Label, Org, Repo, RepoPermission, UrlMap, User,
+    datetime_opt, default_null, AuthorAssociation, Base, Changes, Dt, Head, Installation,
+    IssueState, Label, Links, Milestone, Org, Repo, Team, UrlMap, User,
 };
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PullAction {
+/// The actions that can be taken for a pull request.
+#[derive(Clone, Debug, StringEnum)]
+#[ruma_enum(rename_all = "snake_case")]
+pub enum PullRequestAction {
     /// Reviewer assigned.
     Assigned,
 
@@ -62,12 +63,16 @@ pub enum PullAction {
 
     /// Pull request has been unlocked.
     Unlocked,
+
+    #[doc(hidden)]
+    _Custom(String),
 }
 
+/// The payload of a pull request event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullEvent {
+pub struct PullRequestEvent<'a> {
     /// The action that was performed.
-    pub action: PullAction,
+    pub action: PullRequestAction,
 
     /// The pull request number.
     pub number: UInt,
@@ -75,35 +80,45 @@ pub struct PullEvent {
     /// The changes to the comment if the action was edited.
     ///
     /// Only present for [`PullAction::Edited`].
-    // TODO: what is this
-    pub changes: Option<JsonValue>,
+    #[serde(borrow)]
+    pub changes: Option<Changes<'a>>,
 
     /// Information about the pull request.
-    pub pull_request: PullRequest,
+    #[serde(borrow)]
+    pub pull_request: PullRequest<'a>,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct PullRequest {
+pub struct PullRequest<'a> {
     /// The api url of the pull request.
-    pub url: String,
+    pub url: &'a str,
 
     /// Numeric Id of this repository.
     pub id: UInt,
 
     /// String identifier of the repository.
-    pub node_id: String,
+    pub node_id: &'a str,
 
-    /// The public html web page url.
+    /// The public web page url.
     pub html_url: Url,
 
     /// The url of the diff.
@@ -116,6 +131,7 @@ pub struct PullRequest {
     pub number: UInt,
 
     /// State of this pull request.
+    #[serde(default, deserialize_with = "default_null")]
     pub state: IssueState,
 
     /// Is this pull request locked.
@@ -123,14 +139,14 @@ pub struct PullRequest {
     pub locked: bool,
 
     /// The title of this pull request.
-    pub title: String,
+    pub title: &'a str,
 
     /// Information about the user.
-    pub user: User,
+    #[serde(borrow)]
+    pub user: User<'a>,
 
-    // TODO: confirm
-    /// The body of the commit message.
-    pub body: String,
+    /// The body of the pull request message.
+    pub body: &'a str,
 
     /// Time in UTC this pull request was created.
     pub created_at: Dt,
@@ -139,16 +155,21 @@ pub struct PullRequest {
     pub updated_at: Dt,
 
     /// Time in UTC this pull request was closed.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub closed_at: Option<Dt>,
 
     /// Time in UTC this pull request was last updated.
+    #[serde(default, deserialize_with = "datetime_opt")]
     pub merged_at: Option<Dt>,
 
+    /// The user who merged this pull request.
+    pub merged_by: Option<&'a str>,
+
     /// The SHA of the merge commit, if any.
-    pub merge_commit_sha: Option<String>,
+    pub merge_commit_sha: Option<&'a str>,
 
     /// The association of the user who opened the pull request.
-    pub author_association: String,
+    pub author_association: AuthorAssociation,
 
     /// Is this pull request a draft.
     pub draft: Option<bool>,
@@ -193,167 +214,49 @@ pub struct PullRequest {
     pub changed_files: UInt,
 
     /// The `User` assigned to the pull request.
-    pub assignee: Option<User>,
+    #[serde(borrow)]
+    pub assignee: Option<User<'a>>,
 
     /// The `User`s assigned to the pull request.
-    #[serde(default)]
-    pub assignees: Vec<User>,
+    #[serde(default, borrow)]
+    pub assignees: Vec<User<'a>>,
 
     /// The `User` requested to review the pull request.
-    #[serde(default)]
-    pub requested_reviewers: Vec<User>,
+    #[serde(default, borrow)]
+    pub requested_reviewers: Vec<User<'a>>,
 
     /// The `Team`s requested to review the pull request.
-    #[serde(default)]
-    pub requested_teams: Vec<Team>,
+    #[serde(default, borrow)]
+    pub requested_teams: Vec<Team<'a>>,
 
     /// The labels that have been added to this pull request.
-    #[serde(default)]
-    pub labels: Vec<Label>,
+    #[serde(default, borrow)]
+    pub labels: Vec<Label<'a>>,
 
     /// Milestones that have been added.
-    #[serde(default)]
-    pub milestones: Vec<Milestone>,
+    #[serde(default, borrow)]
+    pub milestones: Vec<Milestone<'a>>,
 
     /// Information about the head of this commit.
-    pub head: Head,
+    #[serde(borrow)]
+    pub head: Head<'a>,
 
-    /// Information about the base commit.
-    pub base: Base,
+    /// Information about the base branch.
+    #[serde(borrow)]
+    pub base: Base<'a>,
 
     /// Information about the repository this pull request is against.
-    pub repository: Option<Repo>,
-}
+    #[serde(borrow)]
+    pub repository: Option<Repo<'a>>,
 
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Head {
-    pub label: Option<String>,
-    #[serde(rename = "ref")]
-    pub ref_field: String,
-    pub sha: String,
-    pub user: Option<User>,
-    pub repo: Option<Repo>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Base {
-    pub label: String,
-    #[serde(rename = "ref")]
-    pub ref_field: String,
-    pub sha: String,
-    pub user: User,
-    pub repo: Option<Repo>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Milestone {
-    /// Numeric Id of this milestone.
-    pub id: UInt,
-
-    /// String identifier of the milestone.
-    pub node_id: String,
-
-    /// The name of this milestone.
-    pub name: String,
-
-    /// Information about the creator of this milestone.
-    pub creator: User,
-
-    /// The public html web page url.
-    pub html_url: Url,
-
-    /// The url to the github api of this repo.
-    pub url: String,
-
-    /// The url to the github api labels requests.
-    pub labels_url: String,
-
-    /// Description of the repo.
-    pub description: Option<String>,
-
-    /// The number this milestone is.
-    pub number: UInt,
-
-    /// The state of this milestone.
-    pub state: Option<IssueState>,
-
-    /// The title of this milestone.
-    pub title: String,
-
-    /// The number of open issues related to this milestone.
-    #[serde(default)]
-    pub open_issues: UInt,
-
-    /// The number of closed issues related to this milestone.
-    #[serde(default)]
-    pub closed_issues: UInt,
-
-    /// The time in UTC when the milestone was created.
-    pub created_at: Dt,
-
-    /// The time in UTC when the milestone was last updated.
-    pub updated_at: Option<Dt>,
-
-    /// The time in UTC when the milestone was closed.
-    pub closed_at: Option<Dt>,
-
-    /// The time in UTC when the milestone is due.
-    pub due_on: Option<Dt>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[non_exhaustive]
-pub struct Team {
-    /// Numeric Id of this team.
-    pub id: UInt,
-
-    /// String identifier of the team.
-    pub node_id: String,
-
-    /// The name of this team.
-    pub name: String,
-
-    /// The slug of this team.
-    pub slug: String,
-
-    /// The public web page url.
-    pub html_url: Url,
-
-    /// The url to the github api of this repo.
-    pub url: String,
-
-    /// Description of the repo.
-    pub description: Option<String>,
-
-    /// The privacy this team is.
-    pub privacy: String,
-
-    /// Permissions required for this team.
-    pub permissions: RepoPermission,
-
-    /// The title of this team.
-    pub title: String,
-
-    /// The number of members on this team.
-    #[serde(default)]
-    pub members_count: UInt,
-
-    /// The time in UTC when the team was created.
-    pub created_at: Option<Dt>,
-
-    /// The time in UTC when the team was last updated.
-    pub updated_at: Option<Dt>,
-
-    /// The time in UTC when the team was closed.
-    pub organization: Option<Org>,
-
-    /// The time in UTC when the team is due.
-    pub parent: Option<Box<Team>>,
+    /// All links related to this pull request.
+    #[serde(rename = "_links", borrow)]
+    pub links: Links<'a>,
 
     /// A map of all the github api urls.
+    ///
+    /// [`PullRequest`] has only a few REST api urls, they relate to commits, reviews,
+    /// and issues.
     #[serde(flatten, default)]
     pub all_urls: UrlMap,
 }

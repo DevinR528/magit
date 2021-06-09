@@ -1,7 +1,8 @@
 use serde::Deserialize;
 
-use crate::api::common::{Dt, Org, Repo, User};
+use crate::api::common::{Dt, Installation, Org, Repo, User};
 
+/// The specific actions that a star event has.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StarAction {
@@ -9,8 +10,9 @@ pub enum StarAction {
     Deleted,
 }
 
+/// The payload of a star event.
 #[derive(Clone, Debug, Deserialize)]
-pub struct StarEvent {
+pub struct StarEvent<'a> {
     /// One of `created` or `deleted`.
     pub action: StarAction,
 
@@ -18,12 +20,21 @@ pub struct StarEvent {
     pub starred_at: Dt,
 
     /// Detailed information about the repository that was stared.
-    pub repository: Repo,
+    #[serde(borrow)]
+    pub repository: Repo<'a>,
+
+    /// Information about Github app installation.
+    ///
+    /// This is only present if the event is sent from said app.
+    #[serde(borrow)]
+    pub installation: Option<Installation<'a>>,
 
     /// Detailed information about the organization the repo that was stared
     /// belongs to.
-    pub organization: Option<Org>,
+    #[serde(borrow)]
+    pub organization: Option<Org<'a>>,
 
     /// Detailed information about the user who stared the repo.
-    pub sender: User,
+    #[serde(borrow)]
+    pub sender: User<'a>,
 }
