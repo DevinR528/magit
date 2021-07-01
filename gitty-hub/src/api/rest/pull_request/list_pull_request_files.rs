@@ -104,5 +104,5 @@ fn pull_request_files() {
     let json = include_str!("../../../../test_json/rest/list_pull_request_files.json");
 
     let jd = &mut serde_json::Deserializer::from_str(json);
-    let repo = serde_path_to_error::deserialize::<_, Response>(jd).unwrap();
+    let _repo = serde_path_to_error::deserialize::<_, Response>(jd).unwrap();
 }
