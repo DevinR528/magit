@@ -9,8 +9,8 @@ use std::str::FromStr;
 
 use self::RenameRule::*;
 
-/// The different possible ways to change case of fields in a struct, or variants in an
-/// enum.
+/// The different possible ways to change case of fields in a struct, or variants in
+/// an enum.
 #[derive(Copy, Clone, PartialEq)]
 pub enum RenameRule {
     /// Don't apply a default rename rule.
@@ -34,8 +34,8 @@ pub enum RenameRule {
     KebabCase,
     /// Rename direct children to "SCREAMING-KEBAB-CASE" style.
     ScreamingKebabCase,
-    /// Rename direct children to "M_MATRIX_ERROR_CASE" style, as used for responses with
-    /// error in Matrix spec.
+    /// Rename direct children to "M_MATRIX_ERROR_CASE" style, as used for responses
+    /// with error in Matrix spec.
     MatrixErrorCase,
     /// Rename the direct children to "m.snake_case" style.
     MatrixSnakeCase,
@@ -44,8 +44,8 @@ pub enum RenameRule {
 }
 
 impl RenameRule {
-    /// Apply a renaming rule to an enum variant, returning the version expected in the
-    /// source.
+    /// Apply a renaming rule to an enum variant, returning the version expected in
+    /// the source.
     pub fn apply_to_variant(&self, variant: &str) -> String {
         match *self {
             None | PascalCase => variant.to_owned(),
@@ -80,8 +80,8 @@ impl RenameRule {
         }
     }
 
-    /// Apply a renaming rule to a struct field, returning the version expected in the
-    /// source.
+    /// Apply a renaming rule to a struct field, returning the version expected in
+    /// the source.
     #[allow(dead_code)]
     pub fn apply_to_field(&self, field: &str) -> String {
         match *self {

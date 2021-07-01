@@ -269,8 +269,8 @@ fn strip_lifetimes(field_type: &mut Type) -> syn::Result<bool> {
                     // TODO: any more id types
                         || last_seg.ident == "ServerName"
                     {
-                        // The identifiers that need to be boxed `Box<T>` since they are
-                        // DST's.
+                        // The identifiers that need to be boxed `Box<T>` since they
+                        // are DST's.
                         Some(parse_quote! { ::std::boxed::Box<#path> })
                     } else {
                         None

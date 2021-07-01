@@ -101,11 +101,12 @@ pub fn expand_enum_from_string(input: &ItemEnum) -> syn::Result<TokenStream> {
         })
         .collect::<syn::Result<_>>()?;
 
-    // Remove `None` from the iterator to avoid emitting consecutive commas in repetition
+    // Remove `None` from the iterator to avoid emitting consecutive commas in
+    // repetition
     let branches = branches.iter().flatten();
 
-    // TODO: this can error reflect that, I don't love the _Custom(String) variant but
-    // maybe that is the best??
+    // TODO: this can error reflect that, I don't love the _Custom(String) variant
+    // but maybe that is the best??
     Ok(quote! {
         impl<T> ::std::convert::From<T> for #enum_name
         where
@@ -145,7 +146,7 @@ pub fn expand_deserialize_from_cow_str(ident: &Ident) -> syn::Result<TokenStream
             {
                 type CowStr<'a> = ::std::borrow::Cow<'a, ::std::primitive::str>;
 
-                let cow = ::ruma::serde::deserialize_cow_str(deserializer)?;
+                let cow = crate::utils::deserialize_cow_str(deserializer)?;
                 Ok(::std::convert::From::<CowStr<'_>>::from(cow))
             }
         }

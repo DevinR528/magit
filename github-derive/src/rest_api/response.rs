@@ -76,10 +76,10 @@ pub(crate) fn expand_response(res: &Response) -> syn::Result<TokenStream> {
     };
 
     let impl_from_reqwest = quote! {
-        #[::rocket::async_trait]
-        impl ::magit::api::GithubResponse for Response {
-            async fn from_response(resp: reqwest::Response) -> Result<Response, ::magit::api::Error> {
-                ::magit::api::from_status(resp.status())?;
+        #[::async_trait::async_trait]
+        impl ::gitty_hub::GithubResponse for Response {
+            async fn from_response(resp: reqwest::Response) -> Result<Response, ::gitty_hub::Error> {
+                ::gitty_hub::from_status(resp.status())?;
 
                 #return_response
             }

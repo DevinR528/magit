@@ -18,7 +18,7 @@ fn expand_metadata(meta: &Metadata) -> syn::Result<TokenStream> {
         #[doc = #meta]
         ///
         #[doc = #description]
-        const METADATA: ::magit::api::MetaData = ::magit::api::MetaData {
+        const METADATA: ::gitty_hub::MetaData = ::gitty_hub::MetaData {
             description: #description,
             method: ::reqwest::Method::#method,
             path: #path,
@@ -102,7 +102,7 @@ pub(crate) fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<Toke
             );
 
             fmt_args.push(quote! {
-                rocket::http::RawStr::new(&self.#path_var.to_string()).percent_decode_lossy().to_string()
+                ::percent_encoding::percent_decode_str(&self.#path_var.to_string()).decode_utf8_lossy().to_string()
             });
             fmt_string.replace_range(start_of_segment..end_of_segment, "{}");
         } else {
@@ -212,16 +212,16 @@ pub(crate) fn expand_request(req: &Request, meta: &Metadata) -> syn::Result<Toke
     };
 
     let to_reqwest = quote! {
-        impl<'a> ::magit::api::GithubRequest for Request<'a> {
+        impl<'a> ::gitty_hub::GithubRequest for Request<'a> {
             #metadata
             type Response = Response;
             fn to_request(
                 self,
-                github: &::magit::api::GithubClient
-            ) -> Result<::reqwest::Request, ::magit::api::Error> {
+                github: &::gitty_hub::GithubClient
+            ) -> Result<::reqwest::Request, ::gitty_hub::Error> {
                 let request = github.request_builder(Self::METADATA.method, &::std::format!(
                     "{}{}",
-                    ::magit::api::BASE_URL,
+                    ::gitty_hub::BASE_URL,
                     #path_str,
                 ));
 

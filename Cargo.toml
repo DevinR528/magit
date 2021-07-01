@@ -14,7 +14,6 @@ edition = "2018"
 chrono = { version = "0.4.19", features = ["serde"] }
 dirs = "3.0.2"
 hmac = "0.11.0"
-octocrab = "0.9.0"
 serde = { version = "1.0.126", features = ["derive"] }
 sha-1 = "0.9.6"
 sha2 = "0.9.5"
@@ -23,8 +22,8 @@ serde_json = "1.0.64"
 thiserror = "1.0.24"
 tracing = "0.1.25"
 tracing-subscriber = "0.2.16"
-reqwest = "0.11.3"
 github-derive = { path = "./github-derive", version = "0.1.0" }
+gitty-hub = { path = "./gitty-hub", version = "0.1.0" }
 indexmap = "1.6.2"
 
 # TODO: REMOVE
@@ -40,11 +39,11 @@ rev = "bf9de1d39e0b33c0172f89f98a43e266e9ae5bd7"
 
 [dependencies.ruma]
 version = "0.1.0"
-features = ["client-api-c"]
+features = ["client-api-c", "markdown"]
 
 [dependencies.tokio]
 version = "1.6.0"
 features = ["macros", "rt-multi-thread", "sync"]
 
 [workspace]
-members = ["github-derive"]
+members = ["github-derive", "gitty-hub"]

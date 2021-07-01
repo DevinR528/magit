@@ -1,3 +1,4 @@
+use gitty_hub::api::{EventKind, GitHubEvent};
 use hmac::{Hmac, Mac, NewMac};
 use rocket::{
     data,
@@ -10,22 +11,22 @@ use rocket::{
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
 
-use crate::api::{EventKind, GitHubEvent};
-
 // TODO: accept: 'application/vnd.github.v3+json'
 pub const X_GITHUB_EVENT: &str = "x-github-event";
 pub const X_HUB_SIGNATURE: &str = "x-hub-signature-256";
 pub const CONTENT_LEN: &str = "content-length";
 pub const CONTENT_TYPE: &str = "content-type";
 
+pub struct GithubHookEvent<'a>(pub(crate) GitHubEvent<'a>);
+
 #[rocket::async_trait]
-impl<'r> FromData<'r> for GitHubEvent<'r> {
+impl<'r> FromData<'r> for GithubHookEvent<'r> {
     type Error = String;
 
     async fn from_data(
         request: &'r Request<'_>,
         data: Data,
-    ) -> data::Outcome<GitHubEvent<'r>, Self::Error> {
+    ) -> data::Outcome<GithubHookEvent<'r>, Self::Error> {
         let keys = request.headers().get(X_HUB_SIGNATURE).collect::<Vec<_>>();
         let content_len = request.headers().get(CONTENT_LEN).collect::<Vec<_>>();
         let content_type = request.headers().get(CONTENT_TYPE).collect::<Vec<_>>();
@@ -101,7 +102,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
         // We store `string` in request-local cache for long-lived borrows.
         let body = rocket::request::local_cache!(request, decoded);
 
-        Outcome::Success(match keys[0].into() {
+        Outcome::Success(GithubHookEvent(match keys[0].into() {
             EventKind::CheckSuite => {
                 GitHubEvent::CheckSuite(
                     match serde_json::from_str(body).map_err(|e| e.to_string()) {
@@ -179,7 +180,9 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
             EventKind::PullRequestReviewComment => GitHubEvent::PullRequestReviewComment(
                 match serde_json::from_str(body).map_err(|e| e.to_string()) {
                     Ok(ev) => ev,
-                    Err(err) => return Outcome::Failure((Status::BadRequest, err)),
+                    Err(err) => {
+                        return Outcome::Failure((Status::BadRequest, err));
+                    }
                 },
             ),
             EventKind::Push => GitHubEvent::Push(
@@ -200,7 +203,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
                     Err(err) => return Outcome::Failure((Status::BadRequest, err)),
                 },
             ),
-            EventKind::Star => GitHubEvent::Status(
+            EventKind::Status => GitHubEvent::Status(
                 match serde_json::from_str(body).map_err(|e| e.to_string()) {
                     Ok(ev) => ev,
                     Err(err) => return Outcome::Failure((Status::BadRequest, err)),
@@ -218,7 +221,7 @@ impl<'r> FromData<'r> for GitHubEvent<'r> {
                     format!("Found unknown event `{}`", ev),
                 ));
             }
-        })
+        }))
     }
 }
 
