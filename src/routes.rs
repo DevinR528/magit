@@ -6,6 +6,7 @@ use rocket::{
     response::{Responder, Result as RocketResult},
     Request, State,
 };
+use ruma::RoomId;
 use thiserror::Error;
 use tracing::{debug, info, warn};
 
@@ -19,8 +20,16 @@ use crate::{
         },
         IssueState,
     },
-    str_fmt, Store,
+    from_data::GithubHookEvent,
+    str_fmt, RepoRoomMap, Store,
 };
+
+#[rocket::catch(404)]
+pub fn not_found(r: &Request<'_>) -> String {
+    println!("{:?}", r);
+    println!("{:?}", r.uri());
+    "not found".to_string()
+}
 
 pub type ResponseResult<T> = Result<T, ResponseError>;
 
@@ -32,7 +41,7 @@ pub enum ResponseError {
 
     /// Cannot send messages to Matrix receiver.
     #[error("Cannot send messages to Matrix receiver: {0}")]
-    Send(#[from] tokio::sync::mpsc::error::SendError<String>),
+    Send(#[from] tokio::sync::mpsc::error::SendError<(RoomId, String)>),
 }
 
 impl<'r, 'o: 'r> Responder<'r, 'o> for ResponseError {
@@ -51,15 +60,15 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for ResponseError {
 }
 
 #[post("/", data = "<event>")]
-pub async fn index<'o: 'r, 'r>(
-    event: GitHubEvent<'r>,
+pub async fn index(
+    event: GithubHookEvent<'_>,
     to_matrix: &State<Store>,
 ) -> ResponseResult<Status> {
     let store: &Store = to_matrix;
-    if !store.config.github.events.contains(&event.as_kind()) {
+    if !store.config.github.events.contains(&event.0.as_kind()) {
         return Ok(Status::NoContent);
     }
-    match event {
+    match event.0 {
         GitHubEvent::CheckRun(_) => {}
         GitHubEvent::CheckSuite(_) => {}
         GitHubEvent::CommitComment(_) => {}
@@ -71,7 +80,9 @@ pub async fn index<'o: 'r, 'r>(
         GitHubEvent::Milestone(_) => {}
         GitHubEvent::Ping(ping) => {
             if let Some(zen) = ping["zen"].as_str() {
-                store.to_matrix.send(zen.to_string()).await?;
+                for RepoRoomMap { room, .. } in &store.config.github.repos {
+                    store.to_matrix.send((room.clone(), zen.to_string())).await?;
+                }
             }
         }
         GitHubEvent::PullRequest(pull) => handle_pull_request(pull, store).await?,
@@ -80,7 +91,16 @@ pub async fn index<'o: 'r, 'r>(
         GitHubEvent::Push(push) => handle_push(push, store).await?,
         GitHubEvent::Release(_) => {}
         GitHubEvent::Star(star) => {
-            store.to_matrix.send(star.sender.login.to_string()).await?
+            if let Some(room) = store
+                .config
+                .github
+                .repos
+                .iter()
+                .find(|map| map.repo == star.repository.full_name)
+                .map(|r| r.room.clone())
+            {
+                store.to_matrix.send((room, star.sender.login.to_string())).await?;
+            }
         }
         GitHubEvent::Status(_) => {}
         GitHubEvent::Watch(_) => {}
@@ -115,43 +135,60 @@ async fn handle_issue(issue: IssueEvent<'_>, store: &Store) -> ResponseResult<()
         };
     }
 
-    if let Some(fmt_str) = store.config.github.format_strings.get("issues") {
-        store
-            .to_matrix
-            .send(str_fmt!(
-                fmt_str,
-                repo_name,
-                username,
-                issue_number,
-                linked_pr,
-                issue_url,
-                title,
-                body,
-                state,
-            ))
-            .await
-            .map_err(|e| e.into())
-    } else {
-        store
-            .to_matrix
-            .send(format!(
-                r#"[{}] {} {} issue #{}
+    let fmt_str = store.config.github.format_strings.get("issues");
+    let room = store
+        .config
+        .github
+        .repos
+        .iter()
+        .find(|map| map.repo == repo_name)
+        .map(|r| r.room.clone());
+    match (fmt_str, room) {
+        (Some(fmt_str), Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    str_fmt!(
+                        fmt_str,
+                        repo_name,
+                        username,
+                        issue_number,
+                        linked_pr,
+                        issue_url,
+                        title,
+                        body,
+                        state,
+                    ),
+                ))
+                .await?;
+        }
+        (None, Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    format!(
+                        r#"[{}] {} {} issue #{}
 [Check out the issue!]({})
 {}
 {}
 This PR has {}"#,
-                repo_name,
-                username,
-                state,
-                issue_number,
-                issue_url,
-                title,
-                body,
-                linked_pr,
-            ))
-            .await
-            .map_err(|e| e.into())
+                        repo_name,
+                        username,
+                        state,
+                        issue_number,
+                        issue_url,
+                        title,
+                        body,
+                        linked_pr,
+                    ),
+                ))
+                .await?;
+        }
+        _ => {}
     }
+    Ok(())
 }
 
 async fn handle_pull_request(
@@ -229,32 +266,46 @@ async fn handle_pull_request(
     };
     let action = &action;
 
-    if let Some(fmt_str) = store.config.github.format_strings.get("pull_request") {
-        store
-            .to_matrix
-            .send(str_fmt!(
-                fmt_str,
-                repo_name,
-                username,
-                action,
-                current,
-                base,
-                additions,
-                deletions,
-                changed_files,
-                commits,
-                state,
-                pull_url,
-                title,
-                body,
-            ))
-            .await
-            .map_err(|e| e.into())
-    } else {
-        store
-            .to_matrix
-            .send(format!(
-                r#"[{}] {}'s PR has new activity: {}
+    let fmt_str = store.config.github.format_strings.get("pull_request");
+    let room = store
+        .config
+        .github
+        .repos
+        .iter()
+        .find(|map| map.repo == repo_name)
+        .map(|r| r.room.clone());
+    match (fmt_str, room) {
+        (Some(fmt_str), Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    str_fmt!(
+                        fmt_str,
+                        repo_name,
+                        username,
+                        action,
+                        current,
+                        base,
+                        additions,
+                        deletions,
+                        changed_files,
+                        commits,
+                        state,
+                        pull_url,
+                        title,
+                        body,
+                    ),
+                ))
+                .await?;
+        }
+        (None, Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    format!(
+                        r#"[{}] {}'s PR has new activity: {}
 [Check out the pull request!]({})
 {}
 {} was opened against {}, has {} commits
@@ -262,44 +313,85 @@ async fn handle_pull_request(
 -- {}
 {} changed files
 This PR is {}"#,
-                repo_name,
-                username,
-                action,
-                pull_url,
-                title,
-                current,
-                base,
-                commits,
-                additions,
-                deletions,
-                changed_files,
-                state,
-            ))
-            .await
-            .map_err(|e| e.into())
+                        repo_name,
+                        username,
+                        action,
+                        pull_url,
+                        title,
+                        current,
+                        base,
+                        commits,
+                        additions,
+                        deletions,
+                        changed_files,
+                        state,
+                    ),
+                ))
+                .await?;
+        }
+        _ => {}
     }
+
+    Ok(())
 }
 
 async fn handle_push(push: PushEvent<'_>, store: &Store) -> ResponseResult<()> {
-    let username = push.pusher.username.map(|s| s.to_owned()).unwrap_or_default();
-    let repo_name = push.repository.full_name;
-    let commits_url = push.compare;
-    let commits_count = push.commits.len();
-    let branch = push.ref_.split('/').last().map(|s| s.to_string()).unwrap_or_default();
+    let username;
+    let repo_name;
+    let commits_url;
+    let commits_count;
+    let plural;
+    let branch;
+    ready_to_fmt! {
+        username = push.sender.login;
+        repo_name = push.repository.full_name;
+        commits_url = push.compare;
+        ref commits_count = push.commits.len().to_string();
+        plural = if push.commits.len() > 1 { "s" } else { "" };
+        ref branch = push.ref_.split('/').last().map(|s| s.to_string()).unwrap_or_default();
+    }
 
-    store
-        .to_matrix
-        .send(format!(
-            "[{}] {} pushed {} commit{} to {}.\n[Check out the diff!]({})",
-            repo_name,
-            username,
-            commits_count,
-            if commits_count > 1 { "s" } else { "" },
-            branch,
-            commits_url
-        ))
-        .await
-        .map_err(|e| e.into())
+    let fmt_str = store.config.github.format_strings.get("push");
+    let room = store
+        .config
+        .github
+        .repos
+        .iter()
+        .find(|map| map.repo == repo_name)
+        .map(|r| r.room.clone());
+    match (fmt_str, room) {
+        (Some(fmt_str), Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    str_fmt!(
+                        fmt_str,
+                        repo_name,
+                        username,
+                        commits_count,
+                        plural,
+                        branch,
+                        commits_url
+                    ),
+                ))
+                .await?;
+        }
+        (None, Some(room)) => {
+            store
+                .to_matrix
+                .send((
+                    room,
+                    format!(
+                        "[{}] {} pushed {} commit{} to {}.\n[Check out the diff!]({})",
+                        repo_name, username, commits_count, plural, branch, commits_url
+                    ),
+                ))
+                .await?;
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 macro_rules! ready_to_fmt {

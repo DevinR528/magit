@@ -7,8 +7,8 @@ use indexmap::IndexMap;
 /// This is the dynamic equivalent to the `format!` macro.
 ///
 /// This macro takes a format string and any number of the same type arguments.
-/// The format arguments must implement [`Display`](std::fmt::Arguments) and match the
-/// number of positional arguments in the format string.
+/// The format arguments must implement [`Display`](std::fmt::Arguments) and match
+/// the number of positional arguments in the format string.
 ///
 /// ## Examples
 ///
@@ -28,8 +28,8 @@ macro_rules! str_fmt {
 }
 
 /// This structure represents a format string combined with its arguments.
-/// In contrast with [`fmt::Arguments`](std::fmt::Arguments) this structure can be easily
-/// and safely created at runtime.
+/// In contrast with [`fmt::Arguments`](std::fmt::Arguments) this structure can be
+/// easily and safely created at runtime.
 #[derive(Clone, Debug)]
 pub struct Arguments<'a, F: AsRef<str>, T: Copy + Display + ?Sized + 'a> {
     fmt: F,

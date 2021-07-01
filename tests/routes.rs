@@ -1,12 +1,32 @@
 use magit::{
-    app,
     from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
+    parse_config, routes, RepoRoomMap, Store,
 };
 use rocket::{
+    catchers,
     http::{ContentType, Header, Status},
     local::asynchronous::Client,
+    routes, Build, Rocket,
 };
-use tokio::sync::mpsc::channel;
+use ruma::{room_id, RoomId};
+use tokio::sync::mpsc::{channel, Sender};
+
+fn app(to_matrix: Sender<(RoomId, String)>) -> Rocket<Build> {
+    let (raw_config, mut config) = parse_config();
+    config.github.repos.push(RepoRoomMap {
+        repo: "DevinR528/cargo-sort".to_owned(),
+        room: room_id!("!aaa:aaa.com"),
+    });
+    config.github.repos.push(RepoRoomMap {
+        repo: "Codertocat/Hello-World".to_owned(),
+        room: room_id!("!aaa:aaa.com"),
+    });
+    let store = Store { config, to_matrix };
+    rocket::custom(raw_config)
+        .manage(store)
+        .mount("/", routes![routes::index])
+        .register("/", catchers![routes::not_found])
+}
 
 fn make_signature(body: &str) -> String {
     use hmac::{Mac, NewMac};
@@ -14,11 +34,6 @@ fn make_signature(body: &str) -> String {
     let secret = std::env::var("__GITHUB_WEBHOOK_SECRET").unwrap();
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())
         .expect("failed to create Hmac digest");
-
-    // let canonical =
-    //     serde_json::to_string(&serde_json::from_str::<serde_json::Value>(body).
-    // unwrap())         .unwrap();
-    // hmac.update(canonical.as_bytes());
     hmac.update(body.as_bytes());
     let end = hmac.finalize();
     let x = end.into_bytes();
@@ -28,7 +43,7 @@ fn make_signature(body: &str) -> String {
 #[tokio::test]
 async fn stars() {
     let (to_matrix, mut from_gh) = channel(1024);
-    let json = include_str!("../test_json/star.json");
+    let json = include_str!("../gitty-hub/test_json/star.json");
 
     let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
     let response = client
@@ -42,13 +57,13 @@ async fn stars() {
         .await;
 
     assert_eq!(response.status(), Status::Ok);
-    assert_eq!("DevinR528", from_gh.recv().await.unwrap());
+    assert_eq!("DevinR528", from_gh.recv().await.unwrap().1);
 }
 
 #[tokio::test]
 async fn pull_request() {
     let (to_matrix, mut from_gh) = channel(1024);
-    let json = include_str!("../test_json/pull_request.json");
+    let json = include_str!("../gitty-hub/test_json/pull_request.json");
 
     let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
     let response = client
@@ -62,13 +77,13 @@ async fn pull_request() {
         .await;
 
     assert_eq!(response.status(), Status::Ok);
-    println!("{}", from_gh.recv().await.unwrap());
+    println!("{:?}", from_gh.recv().await.unwrap());
 }
 
 #[tokio::test]
 async fn issue() {
     let (to_matrix, mut from_gh) = channel(1024);
-    let json = include_str!("../test_json/issue.json");
+    let json = include_str!("../gitty-hub/test_json/issue.json");
 
     let client = Client::debug(app(to_matrix)).await.expect("valid rocket instance");
     let response = client
@@ -82,5 +97,5 @@ async fn issue() {
         .await;
 
     assert_eq!(response.status(), Status::Ok);
-    println!("{}", from_gh.recv().await.unwrap());
+    println!("{:?}", from_gh.recv().await.unwrap());
 }
