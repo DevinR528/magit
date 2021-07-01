@@ -13,37 +13,37 @@ edition = "2018"
 [dependencies]
 chrono = { version = "0.4.19", features = ["serde"] }
 dirs = "3.0.2"
-hmac = "0.11.0"
-serde = { version = "1.0.126", features = ["derive"] }
-sha-1 = "0.9.6"
-sha2 = "0.9.5"
-url = "2.2.2"
-serde_json = "1.0.64"
-thiserror = "1.0.24"
-tracing = "0.1.25"
-tracing-subscriber = "0.2.16"
 github-derive = { path = "./github-derive", version = "0.1.0" }
 gitty-hub = { path = "./gitty-hub", version = "0.1.0" }
+hmac = "0.11.0"
 indexmap = "1.6.2"
+ruma = "0.2.0"
+serde = { version = "1.0.126", features = ["derive"] }
+serde_json = "1.0.64"
+sha-1 = "0.9.6"
+sha2 = "0.9.5"
+thiserror = "1.0.25"
+tracing = "0.1.25"
+tracing-subscriber = "0.2.16"
+url = "2.2.2"
 
 # TODO: REMOVE
-serde_path_to_error = "0.1"
+serde_path_to_error = "0.1.4"
 
 [dependencies.matrix-sdk]
-git = "https://github.com/matrix-org/matrix-rust-sdk"
-features = ["default"]
+version = "0.3.0"
+features = ["default", "markdown"]
 
 [dependencies.rocket]
 git = "https://github.com/SergioBenitez/Rocket"
 rev = "bf9de1d39e0b33c0172f89f98a43e266e9ae5bd7"
 
-[dependencies.ruma]
-version = "0.1.0"
-features = ["client-api-c", "markdown"]
-
 [dependencies.tokio]
-version = "1.6.0"
+version = "1.7.1"
 features = ["macros", "rt-multi-thread", "sync"]
 
 [workspace]
 members = ["github-derive", "gitty-hub"]
+
+# cargo sort command every once in awhile
+# cargo sort -wg -o package,lib,features,dependencies,dev-dependencies,build-dependencies

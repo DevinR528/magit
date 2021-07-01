@@ -232,10 +232,10 @@ mod tests {
 
     use js_int::uint;
 
-    use super::{actions, issue, octocat, repository, Direction, Sort, Type};
+    use super::{actions, issue, octocat, repository, Type};
     use crate::{
         api::{
-            rest::{ApplicationV3Json, MilestoneQuery, StateQuery},
+            rest::{ApplicationV3Json, MilestoneQuery},
             Dt,
         },
         GithubClient,

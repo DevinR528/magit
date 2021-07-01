@@ -9,22 +9,21 @@ keywords = ["api", "github", "hooks", "rest"]
 categories = ["api-bindings", "web-programming"]
 readme = "readme.md"
 edition = "2018"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-github-derive = { path = "../github-derive", version = "0.1.0" }
-serde = { version = "1.0.126", features = ["derive"] }
-chrono = { version = "0.4.19", features = ["serde"] }
-url = { version = "2.2.2", features = ["serde"] }
 async-trait = "0.1.50"
-thiserror = "1.0.24"
-js_int = "0.2.1"
+chrono = { version = "0.4.19", features = ["serde"] }
+github-derive = { path = "../github-derive", version = "0.1.0" }
+js_int = { version = "0.2.1", features = ["serde"] }
+percent-encoding = "2.1.0"
 reqwest = "0.11.4"
+serde = { version = "1.0.126", features = ["derive"] }
+serde_json = "1.0.64"
 # maybe REMOVE
 serde_path_to_error = "0.1"
-serde_json = "1.0.64"
-percent-encoding = "2.1.0"
+thiserror = "1.0.24"
+url = { version = "2.2.2", features = ["serde"] }
 
 [dev-dependencies]
 tokio = { version = "1.7.1", features = ["macros", "rt"] }
