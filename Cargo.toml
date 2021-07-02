@@ -32,7 +32,8 @@ serde_path_to_error = "0.1.4"
 
 [dependencies.matrix-sdk]
 version = "0.3.0"
-features = ["default", "markdown"]
+# path = "../__forks__/matrix-rust-sdk/matrix_sdk"
+features = ["encryption", "sled_cryptostore", "sled_state_store", "require_auth_for_profile_requests", "native-tls", "markdown"]
 
 [dependencies.rocket]
 git = "https://github.com/SergioBenitez/Rocket"

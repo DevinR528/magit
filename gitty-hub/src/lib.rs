@@ -44,10 +44,10 @@ pub enum GithubFailure {
 }
 
 pub fn from_status(status: StatusCode) -> Result<(), Error> {
-    Err(Error::Request(match status {
+    dbg!(Err(Error::Request(match status {
         s if s.is_success() => return Ok(()),
         s => GithubFailure::StatusError(s),
-    }))
+    })))
 }
 
 pub struct MetaData {
