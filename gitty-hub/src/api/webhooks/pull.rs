@@ -46,6 +46,7 @@ pub struct PullRequestEvent<'a> {
 /// The actions that can be taken for a pull request.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum PullRequestAction {
     /// Reviewer assigned.
     Assigned,

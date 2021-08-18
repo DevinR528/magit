@@ -45,6 +45,7 @@ pub struct CheckSuiteEvent<'a> {
 /// The actions that can be taken in a check event.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum CheckAction {
     /// A new check run was created.
     Created,

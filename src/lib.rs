@@ -38,6 +38,24 @@ pub struct Config {
     pub github: GithubConfig,
 }
 
+impl Config {
+    #[doc(hidden)]
+    pub fn debug() -> Self {
+        Self {
+            secret_key: Some("test".to_owned()),
+            github: GithubConfig {
+                repos: vec![],
+                events: vec![],
+                homeserver: "foobar.com".to_owned(),
+                user_name: "foobar.com".to_owned(),
+                password: "foobar.com".to_owned(),
+                user_token: None,
+                format_strings: BTreeMap::default(),
+            },
+        }
+    }
+}
+
 #[allow(unused)]
 pub struct Store {
     pub config: Config,

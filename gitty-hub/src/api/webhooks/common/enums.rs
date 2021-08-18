@@ -4,6 +4,7 @@ use github_derive::StringEnum;
 use serde::Deserialize;
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum Type {
     User,
     Organization,
@@ -49,6 +50,7 @@ impl<'de> Deserialize<'de> for Type {
 }
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum LockReason {
     /// Locked this because it was resolved.
     Resolved,
@@ -106,6 +108,7 @@ impl<'de> Deserialize<'de> for LockReason {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum RepoSelection {
     All,
     Selected,
@@ -113,6 +116,7 @@ pub enum RepoSelection {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum RepoPermission {
     /// Read only access.
     Read,
@@ -135,6 +139,7 @@ impl Default for RepoPermission {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum RepoCreationType {
     All,
     Private,
@@ -147,6 +152,7 @@ impl Default for RepoCreationType {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum IssueState {
     Open,
     Closed,
@@ -161,6 +167,7 @@ impl Default for IssueState {
 /// webhooks API.
 #[derive(Clone, Debug, PartialEq, Eq, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum EventKind {
     CheckRun,
     CheckSuite,
@@ -212,6 +219,7 @@ pub enum EventKind {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "SCREAMING_SNAKE_CASE")]
+#[non_exhaustive]
 pub enum AuthorAssociation {
     Collaborator,
     Contributor,
@@ -229,6 +237,7 @@ impl Default for AuthorAssociation {
 
 #[derive(Debug, Copy, Clone, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum CheckStatus {
     /// There are checks queued to run.
     Queued,
@@ -252,6 +261,7 @@ impl Default for CheckStatus {
 
 #[derive(Debug, Copy, Clone, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum ConclusionStatus {
     /// The check has succeeded.
     Success,
@@ -287,6 +297,7 @@ impl Default for ConclusionStatus {
 /// The event that triggered a workflow run.
 #[derive(Clone, Debug, PartialEq, Eq, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum WorkflowEvent {
     /// A push from a branch that has a workflow enabled.
     Push,
@@ -301,6 +312,7 @@ pub enum WorkflowEvent {
 /// The status of a file tracked by github.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum FileStatus {
     /// The file has been added / created.
     Added,
@@ -321,6 +333,7 @@ pub enum FileStatus {
 /// The status of a file tracked by github.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum MergeStateStatus {
     /// The head ref is out of date.
     Behind,
