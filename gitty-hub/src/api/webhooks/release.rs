@@ -44,6 +44,7 @@ pub struct ReleaseEvent<'a> {
 /// The specific actions that a release event has.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum ReleaseAction {
     /// A release, pre-release, or draft of a release is published.
     Published,

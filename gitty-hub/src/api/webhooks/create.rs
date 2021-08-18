@@ -45,6 +45,7 @@ pub struct CreateEvent<'a> {
 /// The type of git object created.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum RefType {
     /// A tag git object was created.
     Tag,

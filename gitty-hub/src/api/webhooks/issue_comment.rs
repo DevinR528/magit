@@ -52,6 +52,7 @@ pub struct IssueCommentEvent<'a> {
 /// The actions that can be taken for an issue comment event.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum IssueCommentAction {
     /// Created an issue.
     Created,

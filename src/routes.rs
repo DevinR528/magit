@@ -8,7 +8,7 @@ use rocket::{
 };
 use ruma::RoomId;
 use thiserror::Error;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 use crate::{
     api::{
@@ -26,8 +26,7 @@ use crate::{
 
 #[rocket::catch(404)]
 pub fn not_found(r: &Request<'_>) -> String {
-    println!("{:?}", r);
-    println!("{:?}", r.uri());
+    warn!("{:?}", r.uri());
     "not found".to_string()
 }
 
@@ -66,6 +65,7 @@ pub async fn index(
 ) -> ResponseResult<Status> {
     let store: &Store = to_matrix;
     if !store.config.github.events.contains(&event.0.as_kind()) {
+        debug!("found {:?}, not one of our hooks", event.0.as_kind());
         return Ok(Status::NoContent);
     }
     match event.0 {
@@ -132,6 +132,7 @@ async fn handle_issue(issue: IssueEvent<'_>, store: &Store) -> ResponseResult<()
             IssueState::Open => "opened",
             IssueState::Closed => "closed",
             IssueState::Unknown => "<unknown>",
+             _ => "<new unknown variant>",
         };
     }
 

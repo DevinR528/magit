@@ -1,6 +1,6 @@
 use magit::{
     from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
-    parse_config, routes, RepoRoomMap, Store,
+    routes, Config, RepoRoomMap, Store,
 };
 use rocket::{
     catchers,
@@ -12,7 +12,7 @@ use ruma::{room_id, RoomId};
 use tokio::sync::mpsc::{channel, Sender};
 
 fn app(to_matrix: Sender<(RoomId, String)>) -> Rocket<Build> {
-    let (raw_config, mut config) = parse_config();
+    let mut config = Config::debug();
     config.github.repos.push(RepoRoomMap {
         repo: "DevinR528/cargo-sort".to_owned(),
         room: room_id!("!aaa:aaa.com"),
@@ -21,8 +21,19 @@ fn app(to_matrix: Sender<(RoomId, String)>) -> Rocket<Build> {
         repo: "Codertocat/Hello-World".to_owned(),
         room: room_id!("!aaa:aaa.com"),
     });
+
+    config.github.events.push("star".into());
+    config.github.events.push("pull_request".into());
+    config.github.events.push("issues".into());
+
+    std::env::set_var(
+        "__GITHUB_WEBHOOK_SECRET",
+        &config.secret_key.as_deref().unwrap_or(""),
+    );
+
     let store = Store { config, to_matrix };
-    rocket::custom(raw_config)
+
+    rocket::build()
         .manage(store)
         .mount("/", routes![routes::index])
         .register("/", catchers![routes::not_found])

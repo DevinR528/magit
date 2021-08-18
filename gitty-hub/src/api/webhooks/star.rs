@@ -35,6 +35,7 @@ pub struct StarEvent<'a> {
 /// The specific actions that a star event has.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum StarAction {
     /// A star was added to this repository.
     Created,

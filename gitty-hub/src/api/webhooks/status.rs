@@ -53,6 +53,7 @@ pub struct StatusEvent<'a> {
 /// The state of the status event.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum StatusState {
     /// Status is pending.
     Pending,

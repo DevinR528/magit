@@ -34,6 +34,7 @@ pub struct WatchEvent<'a> {
 /// Currently can only be started.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum WatchAction {
     /// A new watcher was added.
     Started,

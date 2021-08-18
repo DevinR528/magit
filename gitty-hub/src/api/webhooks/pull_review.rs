@@ -50,6 +50,7 @@ pub struct PullRequestReviewEvent<'a> {
 /// The actions that can be taken for a pull request review.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum PullRequestReviewAction {
     /// The pull request review has been created.
     ///

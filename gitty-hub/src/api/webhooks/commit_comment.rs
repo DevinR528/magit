@@ -39,6 +39,7 @@ pub struct CommitCommentEvent<'a> {
 
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum CommitCommentAction {
     Created,
 }

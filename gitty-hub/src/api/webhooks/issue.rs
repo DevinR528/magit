@@ -50,6 +50,7 @@ pub struct IssueEvent<'a> {
 /// The actions that can be taken for an issue event.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum IssueAction {
     /// Open an issue.
     Opened,

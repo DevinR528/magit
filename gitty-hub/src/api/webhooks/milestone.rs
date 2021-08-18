@@ -40,6 +40,7 @@ pub struct MilestoneEvent<'a> {
 /// The action that was performed on the milestone.
 #[derive(Clone, Debug, StringEnum)]
 #[github_enum(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum MilestoneAction {
     /// A new milestone was added.
     Created,
