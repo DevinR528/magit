@@ -20,15 +20,15 @@ indexmap = "1.6.2"
 ruma = "0.2.0"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
+
+# TODO: REMOVE
+serde_path_to_error = "0.1.4"
 sha-1 = "0.9.6"
 sha2 = "0.9.5"
 thiserror = "1.0.25"
 tracing = "0.1.25"
 tracing-subscriber = "0.2.16"
 url = "2.2.2"
-
-# TODO: REMOVE
-serde_path_to_error = "0.1.4"
 
 [dependencies.matrix-sdk]
 version = "0.3.0"
