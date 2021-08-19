@@ -16,11 +16,12 @@ user_name = ""
 password = ""
 # Github user token.
 user_token = ""
-# The repositories that should be watched for webhook events and send commands to.
+# The repositories that should be watched for webhook events and commands.
 repos = [ { repo = "DevinR528/magit", room = "!someroom:matrix.org" } ]
 # The events that should be watched for.
 # A full list can be found here
 # https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#in-this-article
+# although not all of them are implemnted feel free to open a PR!
 events = ["issues", "pull_request", "ping", "push", "star", "status"]
 # The format string to use for the specific event.
 pull_request = "[{repository}] {user} {}"

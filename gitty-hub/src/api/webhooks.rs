@@ -53,11 +53,9 @@ pub enum GitHubEvent<'req> {
     CommitComment(CommitCommentEvent<'req>),
 
     /// The create payload of a github webhook.
-    // TODO: make the struct
     Create(CreateEvent<'req>),
 
     /// The create payload of a github webhook.
-    // TODO: make the struct
     Delete(DeleteEvent<'req>),
 
     /// The installation payload of a github webhook.

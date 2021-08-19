@@ -96,7 +96,7 @@ pub async fn index(
                 .github
                 .repos
                 .iter()
-                .find(|map| map.repo == star.repository.full_name)
+                .find(|map| map.repo_name.as_full_name() == star.repository.full_name)
                 .map(|r| r.room.clone())
             {
                 store.to_matrix.send((room, star.sender.login.to_string())).await?;
@@ -142,7 +142,7 @@ async fn handle_issue(issue: IssueEvent<'_>, store: &Store) -> ResponseResult<()
         .github
         .repos
         .iter()
-        .find(|map| map.repo == repo_name)
+        .find(|map| map.repo_name.as_full_name() == repo_name)
         .map(|r| r.room.clone());
     match (fmt_str, room) {
         (Some(fmt_str), Some(room)) => {
@@ -273,7 +273,7 @@ async fn handle_pull_request(
         .github
         .repos
         .iter()
-        .find(|map| map.repo == repo_name)
+        .find(|map| map.repo_name.as_full_name() == repo_name)
         .map(|r| r.room.clone());
     match (fmt_str, room) {
         (Some(fmt_str), Some(room)) => {
@@ -358,7 +358,7 @@ async fn handle_push(push: PushEvent<'_>, store: &Store) -> ResponseResult<()> {
         .github
         .repos
         .iter()
-        .find(|map| map.repo == repo_name)
+        .find(|map| map.repo_name.as_full_name() == repo_name)
         .map(|r| r.room.clone());
     match (fmt_str, room) {
         (Some(fmt_str), Some(room)) => {

@@ -17,6 +17,8 @@ use tokio::{
     time::{sleep, Duration},
 };
 
+use crate::RepoName;
+
 /// All the commands the github bot can do.
 #[derive(Clone, Debug)]
 pub enum Command {
@@ -158,14 +160,15 @@ pub async fn issue_request(
     github: &GithubClient,
     matrix: &MatrixClient,
     room: &RoomId,
+    repo: &RepoName,
     title: &str,
     body: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     github
         .send_github_request(rest::issue::create_issue::Request {
             accept: None,
-            owner: "DevinR528",
-            repo: "magit",
+            owner: &repo.owner,
+            repo: &repo.repo,
             title,
             body,
             labels: vec![],

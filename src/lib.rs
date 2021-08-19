@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use gitty_hub::{api, api::EventKind};
 use rocket::figment::{
@@ -15,8 +15,19 @@ pub mod routes;
 pub mod strfmt;
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct RepoRoomMap {
+pub struct RepoName {
+    pub owner: String,
     pub repo: String,
+}
+
+impl RepoName {
+    pub fn as_full_name(&self) -> String { format!("{}/{}", self.owner, self.repo) }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct RepoRoomMap {
+    #[serde(deserialize_with = "repo_owner")]
+    pub repo_name: RepoName,
     pub room: RoomId,
 }
 
@@ -56,9 +67,26 @@ impl Config {
     }
 }
 
+fn repo_owner<'de, D>(deser: D) -> Result<RepoName, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let string = String::deserialize(deser)?;
+    let mut iter = string.split('/');
+
+    let owner =
+        iter.next().ok_or_else(|| D::Error::missing_field("owner not found"))?.to_owned();
+    let repo =
+        iter.next().ok_or_else(|| D::Error::missing_field("repo not found"))?.to_owned();
+
+    Ok(RepoName { owner, repo })
+}
+
 #[allow(unused)]
 pub struct Store {
-    pub config: Config,
+    pub config: Arc<Config>,
     pub to_matrix: Sender<(RoomId, String)>,
 }
 

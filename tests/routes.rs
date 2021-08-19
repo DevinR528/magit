@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use magit::{
     from_data::{bytes_to_hex, CONTENT_LEN, X_GITHUB_EVENT, X_HUB_SIGNATURE},
-    routes, Config, RepoRoomMap, Store,
+    routes, Config, RepoName, RepoRoomMap, Store,
 };
 use rocket::{
     catchers,
@@ -14,11 +16,17 @@ use tokio::sync::mpsc::{channel, Sender};
 fn app(to_matrix: Sender<(RoomId, String)>) -> Rocket<Build> {
     let mut config = Config::debug();
     config.github.repos.push(RepoRoomMap {
-        repo: "DevinR528/cargo-sort".to_owned(),
+        repo_name: RepoName {
+            owner: "DevinR528".to_owned(),
+            repo: "cargo-sort".to_owned(),
+        },
         room: room_id!("!aaa:aaa.com"),
     });
     config.github.repos.push(RepoRoomMap {
-        repo: "Codertocat/Hello-World".to_owned(),
+        repo_name: RepoName {
+            owner: "Codertocat".to_owned(),
+            repo: "Hello-World".to_owned(),
+        },
         room: room_id!("!aaa:aaa.com"),
     });
 
@@ -31,6 +39,7 @@ fn app(to_matrix: Sender<(RoomId, String)>) -> Rocket<Build> {
         &config.secret_key.as_deref().unwrap_or(""),
     );
 
+    let config = Arc::new(config);
     let store = Store { config, to_matrix };
 
     rocket::build()
